@@ -2,12 +2,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>com.plooh.adssi</groupId>
-	<artifactId>dial-gateway</artifactId>
+	<artifactId>dial-data</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
-	<name>dial-gateway</name>
-	<description>Plooh Secure Wallet Dial Gateway parent</description>
+	<name>dial-data</name>
+	<description>Plooh Secure Wallet Dial data parent</description>
 	<packaging>pom</packaging>
-	<url>https://github.com/dialchain/dial-gateway</url>
+	<url>https://github.com/dialchain/dial-data</url>
 
 	<licenses>
 		<license>
@@ -20,14 +20,14 @@
 		<developer>
 			<name>Francis Pouatcha</name>
 			<email>francis.pouatcha@plooh.com</email>
-			<organizationUrl>https://github.com/dial-gateway</organizationUrl>
+			<organizationUrl>https://github.com/dial-data</organizationUrl>
 		</developer>
 	</developers>
 
 	<scm>
-		<connection>scm:git:git://github.com/dialchain/dial-gateway.git</connection>
-		<developerConnection>scm:git:ssh://git@github.com/dialchain/dial-gateway.git</developerConnection>
-		<url>https://github.com/dialchain/dial-gateway</url>
+		<connection>scm:git:git://github.com/dialchain/dial-data.git</connection>
+		<developerConnection>scm:git:ssh://git@github.com/dialchain/dial-data.git</developerConnection>
+		<url>https://github.com/dialchain/dial-data</url>
 		<tag>HEAD</tag>
 	</scm>
 
@@ -45,8 +45,8 @@
 	</properties>
 
 	<modules>
-		<module>dial-gateway-service</module>
-		<module>dial-gateway-app</module>
+		<module>dial-data-service</module>
+		<module>dial-data-app</module>
 	</modules>
 
 	<dependencyManagement>
@@ -72,7 +72,7 @@
 			</dependency>
 			<dependency>
 				<groupId>com.plooh.adssi</groupId>
-				<artifactId>dial-gateway-service</artifactId>
+				<artifactId>dial-data-service</artifactId>
 				<version>${project.version}</version>
 			</dependency>
 

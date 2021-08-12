@@ -1,8 +1,0 @@
-dial:
-  gateway:
-    messaging:
-      security:
-        signature:
-          ttl: PT1M
-          enabled: true
-          algorithm: EdDSA

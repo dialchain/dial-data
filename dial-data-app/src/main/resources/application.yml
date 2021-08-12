@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: dial-data
+
+server:
+  error:
+    include-message: always
+  port: 9092
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+
+dial:
+  data:
+    messaging:
+      security:
+        signature:
+          ttl: PT1M
+          enabled: false # Disable until Mobile app is ready
+          algorithm: EdDSA
