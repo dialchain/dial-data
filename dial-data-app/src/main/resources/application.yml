@@ -26,3 +26,11 @@ dial:
           ttl: PT1M
           enabled: false # Disable until Mobile app is ready
           algorithm: EdDSA
+    bitcoin:
+      network: testnet # Available options: testnet, regtest, main
+      localhost: false
+      fastCatchupTimeDays: 5 # Tells the PeerGroup to download only block headers before a certain time and bodies after that. Do not use a time > NOW - 1 block, as it will break some block download logic.
+
+logging:
+  level:
+    root: DEBUG

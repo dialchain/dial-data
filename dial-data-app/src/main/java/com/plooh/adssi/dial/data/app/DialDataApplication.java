@@ -1,24 +1,31 @@
 package com.plooh.adssi.dial.data.app;
 
-import com.plooh.adssi.dial.data.MessagingConfig;
+import com.plooh.adssi.dial.data.DialDataConfig;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.apache.commons.lang3.StringUtils;
+import org.bitcoinj.core.PeerGroup;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.core.env.Environment;
 
-@SpringBootApplication(scanBasePackageClasses = { MessagingConfig.class })
-public class MessagingApplication {
+@SpringBootApplication(scanBasePackageClasses = { DialDataConfig.class })
+public class DialDataApplication {
 
-	private static final Logger log = LoggerFactory.getLogger(MessagingApplication.class);
+	private static final Logger log = LoggerFactory.getLogger(DialDataApplication.class);
 
 	public static void main(String[] args) throws UnknownHostException {
-		SpringApplication app = new SpringApplication(MessagingApplication.class);
+		SpringApplication app = new SpringApplication(DialDataApplication.class);
 		Environment env = app.run(args).getEnvironment();
 		printAppInfo(env);
+	}
+
+	@Autowired
+	private void startNode(PeerGroup peerGroup) {
+		peerGroup.start();
 	}
 
 	private static void printAppInfo(Environment env) throws UnknownHostException {
