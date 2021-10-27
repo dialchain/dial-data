@@ -1,0 +1,164 @@
+openapi: 3.0.3
+info:
+  title: Bitcoin Data Service
+  description: Allows bitcoin SPV (Simple Payment Verification) Clients to have a stateless access to the bitcoin network. A bitcoin data service will be designed such as to optimize the anonymity of SPV clients. ???
+  version: 0.1.0
+tags:
+  - name: bitcoin
+    description: Access to the bitcoin network for SPV-Clients
+servers:
+  - url: https://localhost:9092/
+    description: EWU
+paths:
+  /btc/transactions/{transactionId}:
+    post:
+      tags:
+        - bitcoin
+      operationId: submitTransaction
+      description: |
+        Relay transactions produced by the SPV client to the bitcoin network.
+      summary: Submit a transaction to the bitcoin network
+      parameters:
+        - in: path
+          name: transactionId
+          required: true
+          description: ID of the transaction
+          schema:
+            type: string
+        - $ref: '#/components/parameters/paymentParam'
+      requestBody:
+        required: true
+        description: Transaction to be forwarded to the bitcoin network.
+        content:
+          application/octet-stream:
+            schema:
+              type: string
+              format: byte
+      responses:
+        "200":
+          description: Transaction successfully submitted.
+        "403":
+          description: The provided payment is invalid.
+    get:
+      tags:
+        - bitcoin
+      operationId: checkTransaction
+      description: |
+        A submitted transaction is considered valid, when the transaction was forwarded to the MemPool nodes. Even though the bitcoin
+        data service can validate transaction, having those transactions reported by other nodes as seen in the MemPool is part of
+        validating the correctness of the transaction (Format, Signature)
+      summary: Check if a transaction submitted to the network is valid.
+      parameters:
+        - $ref: '#/components/parameters/paymentParam'
+      responses:
+        "200":
+          description: Number of reporting nodes. A value greater than 0 means that the transaction is in the mempool.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckTransactionResponse'
+        "403":
+          description: The provided payment is invalid.
+  /btc/transactions/{transactionId}/block:
+    get:
+      tags:
+        - bitcoin
+      operationId: findBlock
+      description: |
+        Find the block hosting a given transaction by id.
+      summary: Find the block hosting a given transaction by id
+      parameters:
+        - $ref: '#/components/parameters/paymentParam'
+      responses:
+        "200":
+          description: Block information, where the transaction is located.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FindBlockResponse'
+        "403":
+          description: The provided payment is invalid.
+  /btc/blocks/{dateTime}/qty:
+    get:
+      tags:
+        - bitcoin
+      operationId: listBlocks
+      description: |
+        Report on the best chain and for each block the list of transaction Ids included in that block.
+      summary: List Blocks
+      parameters:
+        - $ref: '#/components/parameters/paymentParam'
+      responses:
+        "200":
+          description: List of the next qty blocks in the best chain, mined after the given dateTime.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListBlockResponse'
+        "403":
+          description: The provided payment is invalid.
+
+components:
+  parameters:
+    paymentParam:
+      in: header
+      name: X-Payment-Json
+      required: false
+      description: Payment-Json (TO BE DEFINED)
+      schema:
+        type: string
+        maxLength: 255
+  schemas:
+    ApiError:
+      type: object
+      additionalProperties: true
+      example:
+        timestamp: "2021-02-26T13:47:47.6961462+01:00"
+        traceId: "89a8c0cf69b276f8"
+        status: 404
+        error: "Not Found"
+        errorMessage: "Transaction not found"
+    CheckTransactionResponse:
+      type: object
+      required:
+        - reportingNode
+      properties:
+        reportingNode:
+          type: integer
+          description: Number of reporting nodes.
+    FindBlockResponse:
+      type: object
+      required:
+        - blockId
+        - depth
+      properties:
+        blockId:
+          type: string
+          description: Identifier of the block containing this transaction in the best chain.
+        depth:
+          type: integer
+          description: How deep is the block in the best chain.
+    ListBlockResponse:
+      type: object
+      required:
+        - blocks
+      properties:
+        blocks:
+          type: array
+          items:
+            $ref: '#/components/schemas/Block'
+    Block:
+      type: object
+      required:
+        - header
+        - transactionIds
+      properties:
+        header:
+          type: string
+          format: byte
+          description: block header bin
+        transactionIds:
+          type: array
+          items:
+            type: string
+            description: Transaction Id

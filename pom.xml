@@ -5,7 +5,7 @@
 	<artifactId>dial-data-java</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>dial-data-java</name>
-	<description>Plooh Secure Wallet Dial data parent</description>
+	<description>Dial Data parent</description>
 	<packaging>pom</packaging>
 	<url>https://github.com/dialchain/dial-data-java</url>
 
@@ -20,6 +20,11 @@
 		<developer>
 			<name>Francis Pouatcha</name>
 			<email>francis.pouatcha@plooh.com</email>
+			<organizationUrl>https://github.com/dial-data-java</organizationUrl>
+		</developer>
+		<developer>
+			<name>Willie Chieukam</name>
+			<email>willie.chieukam@plooh.com</email>
 			<organizationUrl>https://github.com/dial-data-java</organizationUrl>
 		</developer>
 	</developers>
@@ -42,6 +47,12 @@
 		<springdoc-openapi-ui.version>1.5.0</springdoc-openapi-ui.version>
 		<commons-lang3.version>3.11</commons-lang3.version>
 		<lombok.version>1.18.16</lombok.version>
+
+		<bitcoinj-core.version>0.15.10</bitcoinj-core.version>
+
+		<swagger-annotations.version>1.6.2</swagger-annotations.version>
+		<openapi-generator.version>4.3.1</openapi-generator.version>
+		<jackson-databind.version>0.2.1</jackson-databind.version>
 	</properties>
 
 	<modules>
@@ -62,16 +73,6 @@
 
 			<dependency>
 				<groupId>com.plooh.adssi</groupId>
-				<artifactId>store-api</artifactId>
-				<version>0.0.4</version>
-			</dependency>
-			<dependency>
-				<groupId>com.plooh.adssi</groupId>
-				<artifactId>store-redis</artifactId>
-				<version>0.0.4</version>
-			</dependency>
-			<dependency>
-				<groupId>com.plooh.adssi</groupId>
 				<artifactId>dial-data-service</artifactId>
 				<version>${project.version}</version>
 			</dependency>
@@ -88,10 +89,14 @@
 			</dependency>
 
 			<dependency>
-				<groupId>com.plooh.adssi</groupId>
-				<artifactId>store-map</artifactId>
-				<version>0.0.4</version>
-				<scope>test</scope>
+				<groupId>io.swagger</groupId>
+				<artifactId>swagger-annotations</artifactId>
+				<version>${swagger-annotations.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>org.openapitools</groupId>
+				<artifactId>jackson-databind-nullable</artifactId>
+				<version>${jackson-databind.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>

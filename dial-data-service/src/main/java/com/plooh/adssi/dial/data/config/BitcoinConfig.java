@@ -1,26 +1,24 @@
 package com.plooh.adssi.dial.data.config;
 
-import com.nimbusds.jose.JWSAlgorithm;
 import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.validation.annotation.Validated;
 
 import javax.validation.constraints.NotNull;
-import java.time.Duration;
 
 @Data
 @Validated
 @Configuration
-@ConfigurationProperties("dial.data.messaging.security.signature")
-public class SecurityConfig {
+@ConfigurationProperties("dial.data.bitcoin")
+public class BitcoinConfig {
 
     @NotNull
-    private Duration ttl;
+    private String network;
 
     @NotNull
-    private Boolean enabled;
+    private Boolean localhost;
 
-    @NotNull
-    private JWSAlgorithm algorithm;
+    private Long fastCatchupTimeDays;
+
 }
