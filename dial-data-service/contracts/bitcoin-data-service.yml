@@ -49,6 +49,12 @@ paths:
         validating the correctness of the transaction (Format, Signature)
       summary: Check if a transaction submitted to the network is valid.
       parameters:
+        - in: path
+          name: transactionId
+          required: true
+          description: ID of the transaction
+          schema:
+            type: string
         - $ref: '#/components/parameters/paymentParam'
       responses:
         "200":
@@ -68,6 +74,12 @@ paths:
         Find the block hosting a given transaction by id.
       summary: Find the block hosting a given transaction by id
       parameters:
+        - in: path
+          name: transactionId
+          required: true
+          description: ID of the transaction
+          schema:
+            type: string
         - $ref: '#/components/parameters/paymentParam'
       responses:
         "200":
@@ -87,6 +99,13 @@ paths:
         Report on the best chain and for each block the list of transaction Ids included in that block.
       summary: List Blocks
       parameters:
+        - in: path
+          name: dateTime
+          required: true
+          description: dateTime
+          schema:
+            type: string
+            format: date-time
         - $ref: '#/components/parameters/paymentParam'
       responses:
         "200":
@@ -102,9 +121,9 @@ components:
   parameters:
     paymentParam:
       in: header
-      name: X-Payment-Json
+      name: X-Payment
       required: false
-      description: Payment-Json (TO BE DEFINED)
+      description: Payment (TO BE DEFINED)
       schema:
         type: string
         maxLength: 255

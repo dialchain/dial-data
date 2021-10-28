@@ -1,5 +1,6 @@
 package com.plooh.adssi.dial.data.config;
 
+import com.plooh.adssi.dial.data.domain.BitcoinNetworkEnum;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Instant;
@@ -12,9 +13,6 @@ import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.PeerAddress;
 import org.bitcoinj.core.PeerGroup;
 import org.bitcoinj.net.discovery.DnsDiscovery;
-import org.bitcoinj.params.MainNetParams;
-import org.bitcoinj.params.RegTestParams;
-import org.bitcoinj.params.TestNet3Params;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
 import org.bitcoinj.store.MemoryBlockStore;
@@ -32,7 +30,7 @@ public class BitcoinSPVProvider {
     @Bean
     @Primary
     public PeerGroup peerGroup() throws BlockStoreException, UnknownHostException {
-        log.info("Connecting to node");
+        log.info("===== Connecting to Bitcoin Node =====");
         final NetworkParameters params = getParams();
         BlockStore blockStore = new MemoryBlockStore(params);
         BlockChain chain = new BlockChain(params, blockStore);
@@ -57,16 +55,10 @@ public class BitcoinSPVProvider {
     }
 
     private NetworkParameters getParams(){
-        // Figure out which network we should connect to. Each one gets its own set of files.
-        NetworkParameters params;
-        if ("testnet".equals(bitcoinConfig.getNetwork())) {
-            params = TestNet3Params.get();
-        } else if ("regtest".equals(bitcoinConfig.getNetwork())) {
-            params = RegTestParams.get();
-        } else {
-            params = MainNetParams.get();
-        }
-        return params;
+        // Figure out which network we should connect to.
+        BitcoinNetworkEnum bitcoinNetworkEnum = BitcoinNetworkEnum.fromValue(bitcoinConfig.getNetwork())
+            .orElse(BitcoinNetworkEnum.MAIN);
+        return bitcoinNetworkEnum.get();
     }
 
 }
