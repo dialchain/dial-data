@@ -10,7 +10,7 @@ servers:
   - url: https://localhost:9092/
     description: EWU
 paths:
-  /btc/transactions/{transactionId}:
+  /btc/transactions:
     post:
       tags:
         - bitcoin
@@ -19,12 +19,6 @@ paths:
         Relay transactions produced by the SPV client to the bitcoin network.
       summary: Submit a transaction to the bitcoin network
       parameters:
-        - in: path
-          name: transactionId
-          required: true
-          description: ID of the transaction
-          schema:
-            type: string
         - $ref: '#/components/parameters/paymentParam'
       requestBody:
         required: true
@@ -52,7 +46,6 @@ paths:
         - in: path
           name: transactionId
           required: true
-          description: ID of the transaction
           schema:
             type: string
         - $ref: '#/components/parameters/paymentParam'
@@ -77,7 +70,6 @@ paths:
         - in: path
           name: transactionId
           required: true
-          description: ID of the transaction
           schema:
             type: string
         - $ref: '#/components/parameters/paymentParam'
@@ -113,7 +105,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ListBlockResponse'
+                $ref: '#/components/schemas/BlockResponse'
         "403":
           description: The provided payment is invalid.
 
@@ -140,15 +132,19 @@ components:
     CheckTransactionResponse:
       type: object
       required:
-        - reportingNode
+        - reportingPeers
+        - reportingBlocks
       properties:
-        reportingNode:
+        reportingPeers:
           type: integer
-          description: Number of reporting nodes.
+          description: Number of reporting peers.
+        reportingBlocks:
+          type: integer
+          description: Number of reporting blocks.
     FindBlockResponse:
       type: object
       required:
-        - blockId
+        - hash
         - depth
       properties:
         blockId:
@@ -157,7 +153,7 @@ components:
         depth:
           type: integer
           description: How deep is the block in the best chain.
-    ListBlockResponse:
+    BlockResponse:
       type: object
       required:
         - blocks
@@ -169,13 +165,11 @@ components:
     Block:
       type: object
       required:
-        - header
+        - hash
         - transactionIds
       properties:
-        header:
+        hash:
           type: string
-          format: byte
-          description: block header bin
         transactionIds:
           type: array
           items:

@@ -1,4 +1,4 @@
-package com.plooh.adssi.dial.data.domain;
+package com.plooh.adssi.dial.data.domain.enums;
 
 import java.util.Optional;
 import java.util.stream.Stream;
