@@ -5,6 +5,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import org.apache.commons.lang3.StringUtils;
 import org.bitcoinj.core.PeerGroup;
+import org.bitcoinj.utils.BriefLogFormatter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,8 @@ public class DialDataApplication {
 
 	@Autowired
 	private void startNode(PeerGroup peerGroup) {
+		BriefLogFormatter.init();
+		// Starts the PeerGroup and begins network activity.
 		peerGroup.start();
 	}
 
