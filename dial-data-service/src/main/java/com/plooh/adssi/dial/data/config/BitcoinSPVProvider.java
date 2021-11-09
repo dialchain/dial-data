@@ -130,7 +130,7 @@ public class BitcoinSPVProvider {
     private NetworkParameters getParams(){
         // Figure out which network we should connect to.
         BitcoinNetworkEnum bitcoinNetworkEnum = BitcoinNetworkEnum.fromValue(bitcoinConfig.getNetwork())
-            .orElse(BitcoinNetworkEnum.MAIN);
+            .orElseGet(() -> BitcoinNetworkEnum.MAIN);
         return bitcoinNetworkEnum.get();
     }
 

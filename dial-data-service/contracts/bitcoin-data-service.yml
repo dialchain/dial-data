@@ -62,7 +62,7 @@ paths:
     get:
       tags:
         - bitcoin
-      operationId: findBlock
+      operationId: getBlockByTransactionId
       description: |
         Find the block hosting a given transaction by id.
       summary: Find the block hosting a given transaction by id
@@ -80,6 +80,33 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FindBlockResponse'
+        "403":
+          description: The provided payment is invalid.
+  /btc/blocks/{blockId}:
+    get:
+      tags:
+        - bitcoin
+      operationId: getBlock
+      description: |
+        Get a block by id.
+      summary: Find the block hosting a given transaction by id
+      parameters:
+        - in: path
+          name: blockId
+          required: true
+          schema:
+            type: string
+        - $ref: '#/components/parameters/paymentParam'
+      responses:
+        "200":
+          description: Block information.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: byte
+        "404":
+          description: If block with ID does not exist.
         "403":
           description: The provided payment is invalid.
   /btc/blocks/{dateTime}/qty:
