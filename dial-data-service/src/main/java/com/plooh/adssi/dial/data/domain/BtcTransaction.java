@@ -2,40 +2,30 @@ package com.plooh.adssi.dial.data.domain;
 
 import java.util.HashSet;
 import java.util.Set;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
+import javax.persistence.*;
+import lombok.*;
 
+@Data
+@NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@Data
+@Entity
+@Table(name = "BTC_TRANSACTIONS")
 public class BtcTransaction {
 
-    private String id;
+    @Id
+    @Column(name = "TX_ID")
+    private String txId;
 
-    private byte[] transactionBytes;
-
-    private Set<String> peerIds;
-
+    @ElementCollection(targetClass = String.class, fetch = FetchType.EAGER)
+    @CollectionTable(name = "BTC_TRANSACTIONS_BLOCKS", joinColumns = @JoinColumn(name = "TX_ID"))
+    @Column(name = "BLOCK_ID")
     private Set<String> blockIds;
-
-    public void addPeer(String peerId){
-        if (this.getPeerIds() == null){
-            this.setPeerIds(new HashSet<>());
-        }
-        this.getPeerIds().add(peerId);
-    }
 
     public void addBlockId(String blockId){
         if (this.getBlockIds() == null){
             this.setBlockIds(new HashSet<>());
         }
-        this.getBlockIds().add(blockId);
-    }
-
-    public void addBestBlockId(String blockId){
-        this.setPeerIds(new HashSet<>());
-        this.setBlockIds(new HashSet<>());
         this.getBlockIds().add(blockId);
     }
 

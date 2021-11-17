@@ -98,6 +98,18 @@
 				<artifactId>jackson-databind-nullable</artifactId>
 				<version>${jackson-databind.version}</version>
 			</dependency>
+
+			<!-- Databases -->
+			<dependency>
+				<groupId>org.postgresql</groupId>
+				<artifactId>postgresql</artifactId>
+				<version>42.3.1</version>
+			</dependency>
+			<dependency>
+				<groupId>com.h2database</groupId>
+				<artifactId>h2</artifactId>
+				<version>1.4.200</version>
+			</dependency>
 		</dependencies>
 	</dependencyManagement>
 
@@ -106,6 +118,10 @@
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 			<version>31.0.1-jre</version>
+		</dependency>
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
 		</dependency>
 	</dependencies>
 

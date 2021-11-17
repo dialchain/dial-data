@@ -15,19 +15,17 @@ mvn spring-boot:run
 
 ## How to test the application locally
 
-Receive message
+Get blocks
 ```
-curl http://localhost:9092/messages/sender/recipient/messageId
-```
+curl http://localhost:9092/btc/blocks?startHeight=20&endHeight=30
 
-Post message
-```
-curl -X POST http://localhost:9092/messages/sender/recipient/messageId -d "HERE_COME_THE_MESSAGE"
-```
+curl http://localhost:9092/btc/blocks/20/30
 
-Delete
 ```
-curl -X DELETE http://localhost:9092/messages/sender/recipient/messageId
+Get block by id
+```
+curl http://localhost:9092/btc/block/xxx
+
 ```
 
 Performance Monitoring

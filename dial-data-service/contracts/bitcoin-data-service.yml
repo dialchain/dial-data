@@ -18,8 +18,6 @@ paths:
       description: |
         Relay transactions produced by the SPV client to the bitcoin network.
       summary: Submit a transaction to the bitcoin network
-      parameters:
-        - $ref: '#/components/parameters/paymentParam'
       requestBody:
         required: true
         description: Transaction to be forwarded to the bitcoin network.
@@ -31,8 +29,6 @@ paths:
       responses:
         "200":
           description: Transaction successfully submitted.
-        "403":
-          description: The provided payment is invalid.
     get:
       tags:
         - bitcoin
@@ -44,11 +40,10 @@ paths:
       summary: Check if a transaction submitted to the network is valid.
       parameters:
         - in: path
-          name: transactionId
+          name: txId
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/paymentParam'
       responses:
         "200":
           description: Number of reporting nodes. A value greater than 0 means that the transaction is in the mempool.
@@ -56,9 +51,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CheckTransactionResponse'
-        "403":
-          description: The provided payment is invalid.
-  /btc/transactions/{transactionId}/block:
+  /btc/transactions/{txId}/block:
     get:
       tags:
         - bitcoin
@@ -68,11 +61,10 @@ paths:
       summary: Find the block hosting a given transaction by id
       parameters:
         - in: path
-          name: transactionId
+          name: txId
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/paymentParam'
       responses:
         "200":
           description: Block information, where the transaction is located.
@@ -80,8 +72,6 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FindBlockResponse'
-        "403":
-          description: The provided payment is invalid.
   /btc/blocks/{blockId}:
     get:
       tags:
@@ -89,82 +79,84 @@ paths:
       operationId: getBlock
       description: |
         Get a block by id.
-      summary: Find the block hosting a given transaction by id
+      summary: Find the block by id
       parameters:
         - in: path
           name: blockId
           required: true
           schema:
             type: string
-        - $ref: '#/components/parameters/paymentParam'
       responses:
         "200":
           description: Block information.
           content:
-            application/octet-stream:
+            application/json:
               schema:
-                type: string
-                format: byte
+                $ref: '#/components/schemas/BlockDto'
         "404":
           description: If block with ID does not exist.
-        "403":
-          description: The provided payment is invalid.
-  /btc/blocks/{dateTime}/qty:
+  /btc/blocks/height:
     get:
       tags:
         - bitcoin
-      operationId: listBlocks
+      operationId: getBlocksByHeight
       description: |
         Report on the best chain and for each block the list of transaction Ids included in that block.
       summary: List Blocks
       parameters:
-        - in: path
-          name: dateTime
+        - in: query
+          name: startHeight
           required: true
-          description: dateTime
+          description: Start height
           schema:
-            type: string
-            format: date-time
-        - $ref: '#/components/parameters/paymentParam'
+            type: integer
+        - in: query
+          name: endHeight
+          required: true
+          description: End height
+          schema:
+            type: integer
       responses:
         "200":
-          description: List of the next qty blocks in the best chain, mined after the given dateTime.
+          description: List all blocks within startHeight and endHeight.
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BlockResponse'
-        "403":
-          description: The provided payment is invalid.
+                $ref: '#/components/schemas/BlockHeadersResponse'
+  /btc/blocks/time:
+    get:
+      tags:
+        - bitcoin
+      operationId: getBlocksByTime
+      description: |
+        Report on the best chain and for each block the list of transaction Ids included in that block.
+      summary: List Blocks
+      parameters:
+        - in: query
+          name: startTime
+          required: true
+          schema:
+            type: integer
+        - in: query
+          name: quantity
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List the next quantity blocks from startTime.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BlockHeadersResponse'
 
 components:
-  parameters:
-    paymentParam:
-      in: header
-      name: X-Payment
-      required: false
-      description: Payment (TO BE DEFINED)
-      schema:
-        type: string
-        maxLength: 255
   schemas:
-    ApiError:
-      type: object
-      additionalProperties: true
-      example:
-        timestamp: "2021-02-26T13:47:47.6961462+01:00"
-        traceId: "89a8c0cf69b276f8"
-        status: 404
-        error: "Not Found"
-        errorMessage: "Transaction not found"
     CheckTransactionResponse:
       type: object
       required:
-        - reportingPeers
         - reportingBlocks
       properties:
-        reportingPeers:
-          type: integer
-          description: Number of reporting peers.
         reportingBlocks:
           type: integer
           description: Number of reporting blocks.
@@ -180,7 +172,15 @@ components:
         depth:
           type: integer
           description: How deep is the block in the best chain.
-    BlockResponse:
+    BlockDto:
+      type: object
+      required:
+        - blockAsBytes
+      properties:
+        blockAsBytes:
+          type: string
+          format: byte
+    BlockHeadersResponse:
       type: object
       required:
         - blocks
@@ -188,16 +188,25 @@ components:
         blocks:
           type: array
           items:
-            $ref: '#/components/schemas/Block'
-    Block:
+            $ref: '#/components/schemas/BlockHeaderDto'
+    BlockHeaderDto:
       type: object
       required:
-        - hash
-        - transactionIds
+        - blockId
+        - prevBlockHash
+        - height
+        - time
+        - txIds
       properties:
-        hash:
+        blockId:
           type: string
-        transactionIds:
+        prevBlockHash:
+          type: string
+        height:
+          type: integer
+        time:
+          type: integer
+        txIds:
           type: array
           items:
             type: string
