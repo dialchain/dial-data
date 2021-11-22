@@ -14,9 +14,6 @@ dial:
   data:
     bitcoin:
       blockstore: postgres # Available options: memory, Postgres
-    db:
-      hostname: localhost
-      dbName: dialdatadb
 
 management:
   health:
