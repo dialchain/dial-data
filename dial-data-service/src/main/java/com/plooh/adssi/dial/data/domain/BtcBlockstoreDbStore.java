@@ -70,12 +70,11 @@ public class BtcBlockstoreDbStore implements BtcBlockStore {
 
     @Override
     public BtcBlockHeader findOrCreateBtcBlock(Block block, Integer height) {
-        BtcBlockHeader btcB = btcBlockHeaderRepository.findById(block.getHashAsString()).orElse(null);
-        if( btcB == null ){
-            btcB = BtcBlockHeader.builder()
+        BtcBlockHeader btcB = btcBlockHeaderRepository.findById(block.getHashAsString())
+            .orElseGet(() -> BtcBlockHeader.builder()
                 .blockId(block.getHashAsString())
-                .build();
-        }
+                .build());
+
         btcB.setTime(new Long(block.getTimeSeconds()).intValue());
         btcB.setPrevBlockHash(block.getPrevBlockHash().toString());
         if ( height != null ){
@@ -99,12 +98,10 @@ public class BtcBlockstoreDbStore implements BtcBlockStore {
             return;
         }
 
-        BtcBlock btcB = btcBlockRepository.findById(block.getHashAsString()).orElse(null);
-        if( btcB == null ){
-            btcB = BtcBlock.builder()
+        BtcBlock btcB = btcBlockRepository.findById(block.getHashAsString())
+            .orElseGet(() -> BtcBlock.builder()
                 .blockId(block.getHashAsString())
-                .build();
-        }
+                .build());
         btcB.setBlockBytes(block.unsafeBitcoinSerialize());
         btcBlockRepository.save(btcB);
     }

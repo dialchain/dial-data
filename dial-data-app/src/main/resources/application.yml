@@ -2,9 +2,6 @@ spring:
   application:
     name: dial-data
 
-#  profiles:
-#    include: postgres
-
 server:
   error:
     include-message: always
