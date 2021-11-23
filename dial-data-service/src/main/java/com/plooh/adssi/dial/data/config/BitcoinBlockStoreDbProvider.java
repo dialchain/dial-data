@@ -33,7 +33,7 @@ public class BitcoinBlockStoreDbProvider {
     @Bean
     @Primary
     public FullPrunedBlockStore blockStore() throws BlockStoreException, MalformedURLException {
-        log.info("=== Using the Postgres Blockstore ===");
+        log.info("=== Using the Postgres Blockstore - Connection Url: {} ===", url);
         var jdbcUrl = JDBCUrl.parse(url).orElseThrow(() -> new MalformedURLException(String.format("The connection [%s] url to the postgres database is malformed")));
         FullPrunedBlockStore blockStore = new PostgresFullPrunedBlockStore(bitcoinConfig.getParams(), bitcoinConfig.getFullStoreDepth(),
             jdbcUrl.getHostname(), jdbcUrl.getDatabase(), username, password);

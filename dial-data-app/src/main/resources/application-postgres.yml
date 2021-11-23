@@ -1,11 +1,10 @@
 spring:
   datasource:
-#    url: jdbc:postgresql://dial-data.clg6kxm72irr.us-east-1.rds.amazonaws.com:5432/dialDB
-    url: jdbc:postgresql://dial-data.clg6kxm72irr.us-east-1.rds.amazonaws.com:5432/dialDB
+    url: jdbc:postgresql://localhost:5432/dialdatadb
     username: user
     password: password
   jpa:
-    hibernate:   # TODO: WILLIE Change with flyway
+    hibernate:
       ddl-auto: update
     properties:
       hibernate:
@@ -14,7 +13,7 @@ spring:
 dial:
   data:
     bitcoin:
-      blockstore: postgres # Available options: memory, Postgres
+      blockstore: postgres # Available options: memory, postgres
 
 management:
   health:

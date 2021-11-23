@@ -70,24 +70,24 @@ public class BtcBlockstoreDbStore implements BtcBlockStore {
 
     @Override
     public BtcBlockHeader findOrCreateBtcBlock(Block block, Integer height) {
-        BtcBlockHeader btcB = btcBlockHeaderRepository.findById(block.getHashAsString())
+        BtcBlockHeader btcBlockHeader = btcBlockHeaderRepository.findById(block.getHashAsString())
             .orElseGet(() -> BtcBlockHeader.builder()
                 .blockId(block.getHashAsString())
                 .build());
 
-        btcB.setTime(new Long(block.getTimeSeconds()).intValue());
-        btcB.setPrevBlockHash(block.getPrevBlockHash().toString());
+        btcBlockHeader.setTime(Math.toIntExact(block.getTimeSeconds()));
+        btcBlockHeader.setPrevBlockHash(block.getPrevBlockHash().toString());
         if ( height != null ){
-            btcB.setHeight(height);
+            btcBlockHeader.setHeight(height);
         }
         if ( block.getTransactions() != null ){
-            btcB.setTxIds(block.getTransactions().stream()
+            btcBlockHeader.setTxIds(block.getTransactions().stream()
                 .map(Transaction::getTxId)
                 .map(Sha256Hash::toString)
                 .collect(Collectors.toSet()));
         }
 
-        BtcBlockHeader btcBlockHeader = btcBlockHeaderRepository.save(btcB);
+        btcBlockHeader = btcBlockHeaderRepository.save(btcBlockHeader);
 
         findOrCreateBtcBlockPayload(block);
         return btcBlockHeader;

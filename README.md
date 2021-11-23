@@ -35,3 +35,11 @@ curl http://localhost:9092/actuator
 
 curl http://localhost:9092/actuator/health
 ```
+
+## SWAGGER URI
+
+https://$DIAL_HOSTNAME/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config
+
+E.x.:
+
+https://dial-data.mon-wallet.com/swagger-ui/index.html?configUrl=/v3/api-docs/swagger-config
