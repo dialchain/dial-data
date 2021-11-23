@@ -1,5 +1,8 @@
-package com.plooh.adssi.dial.data.domain;
+package com.plooh.adssi.dial.data.store;
 
+import com.plooh.adssi.dial.data.domain.BtcBlock;
+import com.plooh.adssi.dial.data.domain.BtcBlockHeader;
+import com.plooh.adssi.dial.data.domain.BtcTransaction;
 import com.plooh.adssi.dial.data.exception.BlockNotFound;
 import com.plooh.adssi.dial.data.exception.TransactionNotFound;
 import java.util.*;
@@ -58,25 +61,22 @@ public class BtcBlockstoreMemoryStore implements BtcBlockStore {
 
     @Override
     public BtcBlockHeader findOrCreateBtcBlock(Block block, Integer height) {
-        BtcBlockHeader btcB = blockHeaderMap.get(block.getHashAsString());
-        if( btcB == null ){
-            btcB = BtcBlockHeader.builder()
+        BtcBlockHeader btcBlockHeader = Optional.ofNullable(blockHeaderMap.get(block.getHashAsString()))
+            .orElseGet(() -> BtcBlockHeader.builder()
                 .blockId(block.getHashAsString())
-                .build();
-        }
-        btcB.setTime(new Long(block.getTimeSeconds()).intValue());
-        btcB.setPrevBlockHash(block.getPrevBlockHash().toString());
+                .build());
+        btcBlockHeader.setTime(Math.toIntExact(block.getTimeSeconds()));
+        btcBlockHeader.setPrevBlockHash(block.getPrevBlockHash().toString());
         if ( height != null ){
-            btcB.setHeight(height);
+            btcBlockHeader.setHeight(height);
         }
         if ( block.getTransactions() != null ){
-            btcB.setTxIds(block.getTransactions().stream()
+            btcBlockHeader.setTxIds(block.getTransactions().stream()
                 .map(Transaction::getTxId)
                 .map(Sha256Hash::toString)
                 .collect(Collectors.toSet()));
         }
-
-        BtcBlockHeader btcBlockHeader = blockHeaderMap.put(block.getHashAsString(), btcB);
+        blockHeaderMap.put(block.getHashAsString(), btcBlockHeader);
 
         findOrCreateBtcBlockPayload(block);
         return btcBlockHeader;
@@ -87,16 +87,13 @@ public class BtcBlockstoreMemoryStore implements BtcBlockStore {
             return;
         }
 
-        BtcBlock btcB = blockMap.get(block.getHashAsString());
-        if( btcB == null ){
-            btcB = BtcBlock.builder()
+        BtcBlock btcBlock = Optional.ofNullable(blockMap.get(block.getHashAsString()))
+            .orElseGet(() -> BtcBlock.builder()
                 .blockId(block.getHashAsString())
-                .build();
-        }
-        btcB.setBlockBytes(block.unsafeBitcoinSerialize());
-        blockMap.put(block.getHashAsString(), btcB);
+                .build());
+        btcBlock.setBlockBytes(block.unsafeBitcoinSerialize());
+        blockMap.put(block.getHashAsString(), btcBlock);
     }
-
 
     @Override
     public StoredBlock getBlock(String blockId) {
