@@ -1,10 +1,7 @@
 package com.plooh.adssi.dial.data.resource;
 
 import com.plooh.adssi.dial.data.bitcoin.BitcoinApi;
-import com.plooh.adssi.dial.data.bitcoin.model.BtcBlockDto;
-import com.plooh.adssi.dial.data.bitcoin.model.BtcBlockHeadersResponse;
-import com.plooh.adssi.dial.data.bitcoin.model.BtcCheckTransactionResponse;
-import com.plooh.adssi.dial.data.bitcoin.model.BtcFindBlockResponse;
+import com.plooh.adssi.dial.data.bitcoin.model.*;
 import com.plooh.adssi.dial.data.service.BtcBlockService;
 import com.plooh.adssi.dial.data.service.PeerGroupService;
 import lombok.AllArgsConstructor;
@@ -21,8 +18,8 @@ public class BitcoinController implements BitcoinApi {
     private final PeerGroupService peerGroupService;
 
     @Override
-    public ResponseEntity<Void> submitTransaction(byte[] transactionBytes) {
-        peerGroupService.submitTransaction(transactionBytes);
+    public ResponseEntity<Void> submitTransaction(BtcTransactionDto btcTransactionDto) {
+        peerGroupService.submitTransaction(btcTransactionDto);
         return ResponseEntity.noContent().build();
     }
 

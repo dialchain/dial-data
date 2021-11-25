@@ -91,7 +91,7 @@ public class BtcBlockService {
 
     public BtcBlockDto getBlock(String blockId) {
         StoredBlock storedBlock = btcBlockStore.getBlock(blockId);
-        return new BtcBlockDto().blockAsBytes(storedBlock.getHeader().unsafeBitcoinSerialize());
+        return new BtcBlockDto().blockBytes(storedBlock.getHeader().unsafeBitcoinSerialize());
     }
 
     public BtcBlockHeader findOrCreateBtcBlock(Block block, Integer height) {

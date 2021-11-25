@@ -1,5 +1,6 @@
 package com.plooh.adssi.dial.data.service;
 
+import com.plooh.adssi.dial.data.bitcoin.model.BtcTransactionDto;
 import lombok.RequiredArgsConstructor;
 import org.bitcoinj.core.PeerGroup;
 import org.bitcoinj.core.Transaction;
@@ -11,8 +12,8 @@ public class PeerGroupService {
 
     private final PeerGroup peerGroup;
 
-    public void submitTransaction(byte[] transactionBytes) {
-        peerGroup.broadcastTransaction(new Transaction(peerGroup.getVersionMessage().getParams(), transactionBytes));
+    public void submitTransaction(BtcTransactionDto btcTransactionDto) {
+        peerGroup.broadcastTransaction(new Transaction(peerGroup.getVersionMessage().getParams(), btcTransactionDto.getTransactionBytes()));
     }
 
 }

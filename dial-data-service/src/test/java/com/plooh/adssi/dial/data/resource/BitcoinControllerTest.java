@@ -5,10 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import com.plooh.adssi.dial.data.bitcoin.model.BtcBlockDto;
-import com.plooh.adssi.dial.data.bitcoin.model.BtcBlockHeadersResponse;
-import com.plooh.adssi.dial.data.bitcoin.model.BtcCheckTransactionResponse;
-import com.plooh.adssi.dial.data.bitcoin.model.BtcFindBlockResponse;
+import com.plooh.adssi.dial.data.bitcoin.model.*;
 import com.plooh.adssi.dial.data.service.BtcBlockService;
 import com.plooh.adssi.dial.data.service.PeerGroupService;
 import java.nio.charset.StandardCharsets;
@@ -37,7 +34,7 @@ public class BitcoinControllerTest {
 
     @Test
     public void shouldSubmitTransaction() {
-        var actual = uut.submitTransaction("test".getBytes(StandardCharsets.UTF_8));
+        var actual = uut.submitTransaction(new BtcTransactionDto().transactionBytes("test".getBytes(StandardCharsets.UTF_8)));
 
         assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
         verify(peerGroupService).submitTransaction(any());
