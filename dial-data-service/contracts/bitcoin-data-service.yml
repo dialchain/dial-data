@@ -22,13 +22,13 @@ paths:
         required: true
         description: Transaction to be forwarded to the bitcoin network.
         content:
-          application/octet-stream:
+          application/json:
             schema:
-              type: string
-              format: byte
+              $ref: '#/components/schemas/TransactionDto'
       responses:
         "200":
           description: Transaction successfully submitted.
+  /btc/transactions/{txId}:
     get:
       tags:
         - bitcoin
@@ -51,6 +51,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CheckTransactionResponse'
+        "404":
+          description: Transaction not found.
   /btc/transactions/{txId}/block:
     get:
       tags:
@@ -72,6 +74,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/FindBlockResponse'
+        "404":
+          description: Transaction not found.
   /btc/blocks/{blockId}:
     get:
       tags:
@@ -94,14 +98,14 @@ paths:
               schema:
                 $ref: '#/components/schemas/BlockDto'
         "404":
-          description: If block with ID does not exist.
+          description: Block not found.
   /btc/blocks/height:
     get:
       tags:
         - bitcoin
       operationId: getBlocksByHeight
       description: |
-        Report on the best chain and for each block the list of transaction Ids included in that block.
+        List all blocks within startHeight and endHeight.
       summary: List Blocks
       parameters:
         - in: query
@@ -129,7 +133,7 @@ paths:
         - bitcoin
       operationId: getBlocksByTime
       description: |
-        Report on the best chain and for each block the list of transaction Ids included in that block.
+        List the next quantity blocks from startTime.
       summary: List Blocks
       parameters:
         - in: query
@@ -175,9 +179,9 @@ components:
     BlockDto:
       type: object
       required:
-        - blockAsBytes
+        - blockBytes
       properties:
-        blockAsBytes:
+        blockBytes:
           type: string
           format: byte
     BlockHeadersResponse:
@@ -211,3 +215,11 @@ components:
           items:
             type: string
             description: Transaction Id
+    TransactionDto:
+      type: object
+      required:
+        - transactionBytes
+      properties:
+        transactionBytes:
+          type: string
+          format: byte
