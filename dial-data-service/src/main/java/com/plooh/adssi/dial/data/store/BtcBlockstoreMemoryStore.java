@@ -1,20 +1,15 @@
 package com.plooh.adssi.dial.data.store;
 
+import com.plooh.adssi.dial.data.domain.BtcAddress;
 import com.plooh.adssi.dial.data.domain.BtcBlock;
 import com.plooh.adssi.dial.data.domain.BtcBlockHeader;
 import com.plooh.adssi.dial.data.domain.BtcTransaction;
-import com.plooh.adssi.dial.data.exception.BlockNotFound;
 import com.plooh.adssi.dial.data.exception.TransactionNotFound;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bitcoinj.core.Block;
-import org.bitcoinj.core.Sha256Hash;
-import org.bitcoinj.core.StoredBlock;
-import org.bitcoinj.core.Transaction;
-import org.bitcoinj.store.BlockStore;
-import org.bitcoinj.store.BlockStoreException;
+import org.bitcoinj.core.*;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
@@ -25,10 +20,9 @@ import org.springframework.stereotype.Component;
 public class BtcBlockstoreMemoryStore implements BtcBlockStore {
 
     private Map<String, BtcTransaction> transactionMap = new HashMap<>();
+    private Map<String, List<BtcAddress>> addressMap = new HashMap<>();
     private Map<String, BtcBlock> blockMap = new HashMap<>();
     private Map<String, BtcBlockHeader> blockHeaderMap = new HashMap<>();
-
-    private final BlockStore blockStore;
 
     @Override
     public synchronized BtcTransaction save(BtcTransaction transaction) {
@@ -36,10 +30,38 @@ public class BtcBlockstoreMemoryStore implements BtcBlockStore {
         return transaction;
     }
 
+    public synchronized BtcAddress saveAddress(BtcAddress btcAddress) {
+        var list = addressMap.get(btcAddress.getAddress());
+        if (list == null){
+            list = new ArrayList<>();
+            addressMap.put(btcAddress.getAddress(), list);
+        }
+        list.add(btcAddress);
+        return btcAddress;
+    }
+
+    public synchronized List<BtcAddress> saveAddresses(List<BtcAddress> btcAddresses) {
+        btcAddresses.stream().forEach(this::saveAddress);
+        return btcAddresses;
+    }
+
     @Override
-    public synchronized BtcTransaction find(String transactionId) {
+    public synchronized BtcTransaction findByTxId(String transactionId) {
         return Optional.ofNullable(transactionMap.get(transactionId))
             .orElseThrow(() -> new TransactionNotFound(transactionId));
+    }
+
+    @Override
+    public Optional<BtcBlockHeader> findBlockHeadersByTxId(String txId) {
+        return blockHeaderMap.values().stream()
+            .filter(Objects::nonNull)
+            .filter( bH -> bH.getTxIds().contains(txId))
+            .findFirst();
+    }
+
+    @Override
+    public List<BtcAddress> getTransactionsByAddress(String address) {
+        return addressMap.get(address);
     }
 
     @Override
@@ -60,7 +82,7 @@ public class BtcBlockstoreMemoryStore implements BtcBlockStore {
     }
 
     @Override
-    public BtcBlockHeader findOrCreateBtcBlock(Block block, Integer height) {
+    public BtcBlockHeader findOrCreateBtcBlock(Block block, Integer height, Integer chainWork) {
         BtcBlockHeader btcBlockHeader = Optional.ofNullable(blockHeaderMap.get(block.getHashAsString()))
             .orElseGet(() -> BtcBlockHeader.builder()
                 .blockId(block.getHashAsString())
@@ -70,16 +92,83 @@ public class BtcBlockstoreMemoryStore implements BtcBlockStore {
         if ( height != null ){
             btcBlockHeader.setHeight(height);
         }
+        if ( chainWork != null ){
+            btcBlockHeader.setChainWork(chainWork);
+        }
         if ( block.getTransactions() != null ){
             btcBlockHeader.setTxIds(block.getTransactions().stream()
                 .map(Transaction::getTxId)
                 .map(Sha256Hash::toString)
                 .collect(Collectors.toSet()));
+
+            handleTransactionInputs(block.getHashAsString(), block.getTransactions());
+            handleTransactionOutputs(block.getHashAsString(), block.getTransactions());
         }
         blockHeaderMap.put(block.getHashAsString(), btcBlockHeader);
 
         findOrCreateBtcBlockPayload(block);
         return btcBlockHeader;
+    }
+
+    private void handleTransactionOutputs(final String blockHash, List<Transaction> transactions) {
+        if (transactions == null){
+            return;
+        }
+
+        List<TransactionOutput> transactionOutputs = transactions.stream()
+            .map(Transaction::getOutputs)
+            .findAny()
+            .orElseGet(() -> List.of());
+
+        var btcAddresses = transactionOutputs.stream()
+            .map( txOutput -> {
+                try {
+                    var btcAddress = BtcAddress.builder()
+                        .address(txOutput.getScriptPubKey().getToAddress(txOutput.getParams()).toString())
+                        .blockId(blockHash)
+                        .txId(txOutput.getParentTransaction().getTxId().toString())
+                        .input(false)
+                        .build();
+                        return btcAddress;
+                    } catch (Exception e){
+                        log.warn(e.getMessage(), e);
+                        return null;
+                    }
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+        saveAddresses(btcAddresses);
+    }
+
+    private void handleTransactionInputs(final String blockHash, List<Transaction> transactions) {
+        if (transactions == null){
+            return;
+        }
+
+        List<TransactionInput> transactionInputs = transactions.stream()
+            .map(Transaction::getInputs)
+            .findAny()
+            .orElseGet(() -> List.of());
+
+        var btcAddresses = transactionInputs.stream()
+            .filter(txInput -> !txInput.isCoinBase())
+            .map( txInput -> {
+                try {
+                    var btcAddress = BtcAddress.builder()
+                        .address(txInput.getScriptSig().getToAddress(txInput.getParams()).toString())
+                        .blockId(blockHash)
+                        .txId(txInput.getParentTransaction().getTxId().toString())
+                        .input(true)
+                        .build();
+                    return btcAddress;
+                } catch (Exception e){
+                    log.warn(e.getMessage(), e);
+                    return null;
+                }
+            })
+            .filter(Objects::nonNull)
+            .collect(Collectors.toList());
+        saveAddresses(btcAddresses);
     }
 
     private void findOrCreateBtcBlockPayload(Block block) {
@@ -96,23 +185,8 @@ public class BtcBlockstoreMemoryStore implements BtcBlockStore {
     }
 
     @Override
-    public StoredBlock getBlock(String blockId) {
-        try {
-            return Optional.ofNullable(blockStore.get(Sha256Hash.wrap(blockId)))
-                .orElseThrow(() -> new BlockNotFound(blockId));
-        } catch (BlockStoreException e) {
-            throw new BlockNotFound(blockId);
-        }
-    }
-
-    @Override
-    public int getBlockDepth(int blockHeight) {
-        try {
-            return blockStore.getChainHead().getHeight() - blockHeight;
-        } catch (BlockStoreException e) {
-            log.warn(e.getMessage());
-            return 0;
-        }
+    public BtcBlock getBlockById(String blockId) {
+        return blockMap.get(blockId);
     }
 
 }

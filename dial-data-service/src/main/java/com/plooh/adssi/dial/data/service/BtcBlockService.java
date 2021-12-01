@@ -2,7 +2,6 @@ package com.plooh.adssi.dial.data.service;
 
 import com.plooh.adssi.dial.data.bitcoin.model.*;
 import com.plooh.adssi.dial.data.domain.*;
-import com.plooh.adssi.dial.data.exception.BlockNotFound;
 import com.plooh.adssi.dial.data.exception.TransactionNotFound;
 import com.plooh.adssi.dial.data.store.BtcBlockStore;
 import java.util.*;
@@ -22,7 +21,7 @@ public class BtcBlockService {
     public BtcTransaction findOrCreateBtcTransaction(Transaction tx, String blockId){
         BtcTransaction btcTransaction = null;
         try {
-            btcTransaction = btcBlockStore.find(tx.getTxId().toString());
+            btcTransaction = btcBlockStore.findByTxId(tx.getTxId().toString());
         } catch (TransactionNotFound e){
             // If tx does not exist create tx with the corresponding best block
             btcTransaction = BtcTransaction.builder()
@@ -30,7 +29,7 @@ public class BtcBlockService {
                 .build();
         }
 
-        if ( blockId != null) {
+        if (blockId != null) {
             btcTransaction.addBlockId(blockId);
         }
         return saveTransaction(btcTransaction);
@@ -41,30 +40,18 @@ public class BtcBlockService {
     }
 
     public BtcCheckTransactionResponse checkTransaction(String txId) {
-        var btcTransaction = btcBlockStore.find(txId);
+        var btcTransaction = btcBlockStore.findByTxId(txId);
         var response = new BtcCheckTransactionResponse()
-                .reportingBlocks(btcTransaction.getBlockIds() == null ? null : btcTransaction.getBlockIds().size());
+                .reportingBlocks(Optional.ofNullable(btcTransaction.getBlockIds()).map(Set::size).orElse(0));
         return response;
     }
 
-    public BtcFindBlockResponse findBlockByTransactionId(String txId) {
-        var btcTransaction = btcBlockStore.find(txId);
-        var response = new BtcFindBlockResponse();
-        if (btcTransaction.getBlockIds() != null){
-            // If block id of block in the best chain available
-            List<String> blockIds = new ArrayList<>(btcTransaction.getBlockIds());
-            for (int i = 0; i < blockIds.size(); i++) {
-                try {
-                    StoredBlock storedBlock = btcBlockStore.getBlock(blockIds.get(i));
-                    response = new BtcFindBlockResponse()
-                        .blockId(storedBlock.getHeader().getHashAsString())
-                        .depth(btcBlockStore.getBlockDepth(storedBlock.getHeight()));
-                    break;
-                } catch (BlockNotFound ignored){}
-            }
-        }
+    public BtcFullBlockHeadersResponse findBlockByTransactionId(String txId) {
+        var response = btcBlockStore.findBlockHeadersByTxId(txId)
+            .map(this::mapToBtcFullBlockHeadersResponse)
+            .orElse(null);
         return response;
-    }
+   }
 
     public BtcBlockHeadersResponse getBlocksByHeight(int startHeight, int endHeight) {
         var btcBlockHeaders = btcBlockStore.getBlocksByHeight(startHeight, endHeight).stream()
@@ -82,20 +69,38 @@ public class BtcBlockService {
 
     private BtcBlockHeaderDto mapToBtcBlockHeaderDto(BtcBlockHeader btcBlockHeader) {
         return new BtcBlockHeaderDto()
-            .blockId(btcBlockHeader.getBlockId())
+            .blockHash(btcBlockHeader.getBlockId())
             .height(btcBlockHeader.getHeight())
+            .chainWork(btcBlockHeader.getChainWork())
             .time(btcBlockHeader.getTime())
             .prevBlockHash(btcBlockHeader.getPrevBlockHash())
-            .txIds( btcBlockHeader.getTxIds() ==  null ? null : new ArrayList<>(btcBlockHeader.getTxIds()));
+            .txIds(new ArrayList<>(btcBlockHeader.getTxIds()));
+    }
+
+    private BtcFullBlockHeadersResponse mapToBtcFullBlockHeadersResponse(BtcBlockHeader btcBlockHeader) {
+        BtcBlock btcBlock = btcBlockStore.getBlockById(btcBlockHeader.getBlockId());
+        return new BtcFullBlockHeadersResponse()
+            .blockHash(btcBlockHeader.getBlockId())
+            .height(btcBlockHeader.getHeight())
+            .chainWork(btcBlockHeader.getChainWork())
+            .time(btcBlockHeader.getTime())
+            .prevBlockHash(btcBlockHeader.getPrevBlockHash())
+            .txIds(new ArrayList<>(btcBlockHeader.getTxIds()))
+            .blockBytes(btcBlock.getBlockBytes());
     }
 
     public BtcBlockDto getBlock(String blockId) {
-        StoredBlock storedBlock = btcBlockStore.getBlock(blockId);
-        return new BtcBlockDto().blockBytes(storedBlock.getHeader().unsafeBitcoinSerialize());
+        BtcBlock btcBlock = btcBlockStore.getBlockById(blockId);
+        return new BtcBlockDto().blockBytes(btcBlock.getBlockBytes());
     }
 
-    public BtcBlockHeader findOrCreateBtcBlock(Block block, Integer height) {
-        return btcBlockStore.findOrCreateBtcBlock(block, height);
+    public BtcBlockHeader findOrCreateBtcBlock(Block block, Integer height, Integer chainWork) {
+        return btcBlockStore.findOrCreateBtcBlock(block, height, chainWork);
+    }
+
+    public BtcTransactionsResponse getTransactionsByAddress(String address) {
+        List<BtcAddress> transactions = btcBlockStore.getTransactionsByAddress(address);
+        return new BtcTransactionsResponse().txIds(transactions.stream().map(BtcAddress::getTxId).collect(Collectors.toList()));
     }
 
 }

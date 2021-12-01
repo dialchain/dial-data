@@ -1,25 +1,29 @@
 package com.plooh.adssi.dial.data.store;
 
+import com.plooh.adssi.dial.data.domain.BtcAddress;
+import com.plooh.adssi.dial.data.domain.BtcBlock;
 import com.plooh.adssi.dial.data.domain.BtcBlockHeader;
 import com.plooh.adssi.dial.data.domain.BtcTransaction;
 import java.util.List;
+import java.util.Optional;
 import org.bitcoinj.core.Block;
-import org.bitcoinj.core.StoredBlock;
 
 public interface BtcBlockStore {
 
     BtcTransaction save(BtcTransaction transaction);
 
-    BtcTransaction find(String transactionId);
+    BtcTransaction findByTxId(String transactionId);
 
     List<BtcBlockHeader> getBlocksByHeight(int startHeight, int endHeight);
 
     List<BtcBlockHeader> getBlocksByTime(Integer startTime, Integer quantity);
 
-    StoredBlock getBlock(String blockId);
+    BtcBlock getBlockById(String blockId);
 
-    int getBlockDepth(int blockHeight);
+    BtcBlockHeader findOrCreateBtcBlock(Block block, Integer height, Integer chainWork);
 
-    BtcBlockHeader findOrCreateBtcBlock(Block block, Integer height);
+    Optional<BtcBlockHeader> findBlockHeadersByTxId(String txId);
+
+    List<BtcAddress> getTransactionsByAddress(String address);
 
 }

@@ -12,7 +12,7 @@ public class PeerGroupService {
 
     private final PeerGroup peerGroup;
 
-    public void submitTransaction(BtcTransactionDto btcTransactionDto) {
+    public void broadcastTransaction(BtcTransactionDto btcTransactionDto) {
         peerGroup.broadcastTransaction(new Transaction(peerGroup.getVersionMessage().getParams(), btcTransactionDto.getTransactionBytes()));
     }
 
