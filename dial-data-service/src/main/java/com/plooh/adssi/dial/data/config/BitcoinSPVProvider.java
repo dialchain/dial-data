@@ -47,11 +47,11 @@ public class BitcoinSPVProvider {
             Optional.ofNullable(block.getTransactions()).ifPresent( txs -> {
                 txs.forEach(tx -> btcBlockService.findOrCreateBtcTransaction(tx, block.getHash().toString()));
                 });
-            btcBlockService.findOrCreateBtcBlock(block, null);
+            btcBlockService.findOrCreateBtcBlock(block, null, null);
         });
 
         chain.addNewBestBlockListener(Threading.USER_THREAD,
-            block -> btcBlockService.findOrCreateBtcBlock(block.getHeader(), block.getHeight()));
+            block -> btcBlockService.findOrCreateBtcBlock(block.getHeader(), block.getHeight(), block.getChainWork().intValue()));
 
         return peerGroup;
     }

@@ -34,10 +34,10 @@ public class BitcoinControllerTest {
 
     @Test
     public void shouldSubmitTransaction() {
-        var actual = uut.submitTransaction(new BtcTransactionDto().transactionBytes("test".getBytes(StandardCharsets.UTF_8)));
+        var actual = uut.broadcastTransaction(new BtcTransactionDto().transactionBytes("test".getBytes(StandardCharsets.UTF_8)));
 
         assertThat(actual.getStatusCode()).isEqualTo(HttpStatus.NO_CONTENT);
-        verify(peerGroupService).submitTransaction(any());
+        verify(peerGroupService).broadcastTransaction(any());
     }
 
     @Test
@@ -53,7 +53,7 @@ public class BitcoinControllerTest {
 
     @Test
     public void shouldGetBlockByTransactionId() {
-        var response = new BtcFindBlockResponse();
+        var response = new BtcFullBlockHeadersResponse();
         when(btcBlockService.findBlockByTransactionId("txId")).thenReturn(response);
         var actual = uut.getBlockByTransactionId("txId");
 

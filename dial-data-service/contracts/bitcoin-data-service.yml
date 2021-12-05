@@ -1,23 +1,25 @@
 openapi: 3.0.3
 info:
   title: Bitcoin Data Service
-  description: Allows bitcoin SPV (Simple Payment Verification) Clients to have a stateless access to the bitcoin network. A bitcoin data service will be designed such as to optimize the anonymity of SPV clients. ???
-  version: 0.1.0
+  description: Allows bitcoin SPV (Simple Payment Verification) Clients to have a stateless access to the bitcoin network. A bitcoin data service will be designed such as to optimize the anonymity of SPV clients.
+  version: 1.0.0
 tags:
   - name: bitcoin
     description: Access to the bitcoin network for SPV-Clients
 servers:
   - url: https://localhost:9092/
-    description: EWU
+    description: Local
+  - url: https://dial-data.mon-wallet.com/
+    description: Integration
 paths:
   /btc/transactions:
     post:
       tags:
         - bitcoin
-      operationId: submitTransaction
+      operationId: broadcastTransaction
       description: |
         Relay transactions produced by the SPV client to the bitcoin network.
-      summary: Submit a transaction to the bitcoin network
+      summary: Broadcast a transaction to the bitcoin network
       requestBody:
         required: true
         description: Transaction to be forwarded to the bitcoin network.
@@ -26,9 +28,32 @@ paths:
             schema:
               $ref: '#/components/schemas/TransactionDto'
       responses:
-        "200":
+        "202":
           description: Transaction successfully submitted.
-  /btc/transactions/{txId}:
+  /btc/transactions/address/{address}:
+    get:
+      tags:
+        - bitcoin
+      operationId: getTransactionsByAddress
+      description: |
+        Get transaction by address
+      summary: Get transaction by address
+      parameters:
+        - in: path
+          name: address
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Get transaction associated with the address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionsResponse'
+        "404":
+          description: Address not found.
+  /btc/transactions/{txId}/check:
     get:
       tags:
         - bitcoin
@@ -53,7 +78,7 @@ paths:
                 $ref: '#/components/schemas/CheckTransactionResponse'
         "404":
           description: Transaction not found.
-  /btc/transactions/{txId}/block:
+  /btc/blocks/transaction/{txId}:
     get:
       tags:
         - bitcoin
@@ -73,20 +98,20 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FindBlockResponse'
+                $ref: '#/components/schemas/FullBlockHeadersResponse'
         "404":
           description: Transaction not found.
-  /btc/blocks/{blockId}:
+  /btc/blocks/{blockHash}:
     get:
       tags:
         - bitcoin
       operationId: getBlock
       description: |
-        Get a block by id.
-      summary: Find the block by id
+        Get a block by Hash.
+      summary: Find the block by Hash
       parameters:
         - in: path
-          name: blockId
+          name: blockHash
           required: true
           schema:
             type: string
@@ -164,18 +189,6 @@ components:
         reportingBlocks:
           type: integer
           description: Number of reporting blocks.
-    FindBlockResponse:
-      type: object
-      required:
-        - hash
-        - depth
-      properties:
-        blockId:
-          type: string
-          description: Identifier of the block containing this transaction in the best chain.
-        depth:
-          type: integer
-          description: How deep is the block in the best chain.
     BlockDto:
       type: object
       required:
@@ -184,6 +197,10 @@ components:
         blockBytes:
           type: string
           format: byte
+    FullBlockHeadersResponse:
+      allOf:
+        - $ref: '#/components/schemas/BlockHeaderDto'
+        - $ref:  '#/components/schemas/BlockDto'
     BlockHeadersResponse:
       type: object
       required:
@@ -196,17 +213,20 @@ components:
     BlockHeaderDto:
       type: object
       required:
-        - blockId
+        - blockHash
         - prevBlockHash
         - height
+        - chainWork
         - time
         - txIds
       properties:
-        blockId:
+        blockHash:
           type: string
         prevBlockHash:
           type: string
         height:
+          type: integer
+        chainWork:
           type: integer
         time:
           type: integer
@@ -223,3 +243,13 @@ components:
         transactionBytes:
           type: string
           format: byte
+    TransactionsResponse:
+      type: object
+      required:
+        - txIds
+      properties:
+        txIds:
+          type: array
+          items:
+            type: string
+            description: Transaction Id

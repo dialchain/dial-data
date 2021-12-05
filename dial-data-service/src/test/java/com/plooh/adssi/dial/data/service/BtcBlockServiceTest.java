@@ -36,7 +36,7 @@ public class BtcBlockServiceTest {
 
     @Test
     public void shouldCheckTransaction() {
-        when(btcBlockStore.find("txId"))
+        when(btcBlockStore.findByTxId("txId"))
             .thenReturn(BtcTransaction.builder().blockIds(Set.of("blockId")).build());
 
         var response = uut.checkTransaction("txId");

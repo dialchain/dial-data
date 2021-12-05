@@ -18,9 +18,14 @@ public class BitcoinController implements BitcoinApi {
     private final PeerGroupService peerGroupService;
 
     @Override
-    public ResponseEntity<Void> submitTransaction(BtcTransactionDto btcTransactionDto) {
-        peerGroupService.submitTransaction(btcTransactionDto);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<Void> broadcastTransaction(BtcTransactionDto btcTransactionDto) {
+        peerGroupService.broadcastTransaction(btcTransactionDto);
+        return ResponseEntity.accepted().build();
+    }
+
+    @Override
+    public ResponseEntity<BtcTransactionsResponse> getTransactionsByAddress(String address) {
+        return ResponseEntity.ok(btcBlockService.getTransactionsByAddress(address));
     }
 
     @Override
@@ -29,13 +34,8 @@ public class BitcoinController implements BitcoinApi {
     }
 
     @Override
-    public ResponseEntity<BtcFindBlockResponse> getBlockByTransactionId(String txId) {
+    public ResponseEntity<BtcFullBlockHeadersResponse> getBlockByTransactionId(String txId) {
         return ResponseEntity.ok(btcBlockService.findBlockByTransactionId(txId));
-    }
-
-    @Override
-    public ResponseEntity<BtcBlockHeadersResponse> getBlocksByHeight(Integer startHeight, Integer endHeight) {
-        return ResponseEntity.ok(btcBlockService.getBlocksByHeight(startHeight, endHeight));
     }
 
     @Override
@@ -44,7 +44,13 @@ public class BitcoinController implements BitcoinApi {
     }
 
     @Override
+    public ResponseEntity<BtcBlockHeadersResponse> getBlocksByHeight(Integer startHeight, Integer endHeight) {
+        return ResponseEntity.ok(btcBlockService.getBlocksByHeight(startHeight, endHeight));
+    }
+
+    @Override
     public ResponseEntity<BtcBlockHeadersResponse> getBlocksByTime(Integer startTime, Integer quantity) {
         return ResponseEntity.ok(btcBlockService.getBlocksByTime(startTime, quantity));
     }
+
 }
