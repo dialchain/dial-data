@@ -18,15 +18,15 @@ public class BtcBlockService {
 
     private final BtcBlockStore btcBlockStore;
 
-    public BtcTransaction findOrCreateBtcTransaction(Transaction tx, String blockId){
+    public BtcTransaction findOrCreateBtcTransaction(Transaction tx, String blockId) {
         BtcTransaction btcTransaction = null;
         try {
             btcTransaction = btcBlockStore.findByTxId(tx.getTxId().toString());
-        } catch (TransactionNotFound e){
+        } catch (TransactionNotFound e) {
             // If tx does not exist create tx with the corresponding best block
             btcTransaction = BtcTransaction.builder()
-                .txId(tx.getTxId().toString())
-                .build();
+                    .txId(tx.getTxId().toString())
+                    .build();
         }
 
         if (blockId != null) {
@@ -48,45 +48,52 @@ public class BtcBlockService {
 
     public BtcFullBlockHeadersResponse findBlockByTransactionId(String txId) {
         var response = btcBlockStore.findBlockHeadersByTxId(txId)
-            .map(this::mapToBtcFullBlockHeadersResponse)
-            .orElse(null);
+                .map(this::mapToBtcFullBlockHeadersResponse)
+                .orElse(null);
         return response;
-   }
+    }
 
     public BtcBlockHeadersResponse getBlocksByHeight(int startHeight, int endHeight) {
-        var btcBlockHeaders = btcBlockStore.getBlocksByHeight(startHeight, endHeight).stream()
-            .map(this::mapToBtcBlockHeaderDto)
-            .collect(Collectors.toList());
+        List<BtcBlockHeaderDto> btcBlockHeaders = null;
+        if (endHeight >= startHeight) {
+            // TODO: configurable mac height. Let us use 144 (6 * 24)
+            endHeight = Math.min(endHeight, startHeight + 144);
+            btcBlockHeaders = btcBlockStore.getBlocksByHeight(startHeight, endHeight).stream()
+                    .map(this::mapToBtcBlockHeaderDto)
+                    .collect(Collectors.toList());
+        } else {
+            btcBlockHeaders = Collections.emptyList();
+        }
         return new BtcBlockHeadersResponse().blocks(btcBlockHeaders);
     }
 
     public BtcBlockHeadersResponse getBlocksByTime(Integer startTime, Integer quantity) {
         var btcBlockHeaders = btcBlockStore.getBlocksByTime(startTime, quantity).stream()
-            .map(this::mapToBtcBlockHeaderDto)
-            .collect(Collectors.toList());
+                .map(this::mapToBtcBlockHeaderDto)
+                .collect(Collectors.toList());
         return new BtcBlockHeadersResponse().blocks(btcBlockHeaders);
     }
 
     private BtcBlockHeaderDto mapToBtcBlockHeaderDto(BtcBlockHeader btcBlockHeader) {
         return new BtcBlockHeaderDto()
-            .blockHash(btcBlockHeader.getBlockId())
-            .height(btcBlockHeader.getHeight())
-            .chainWork(btcBlockHeader.getChainWork())
-            .time(btcBlockHeader.getTime())
-            .prevBlockHash(btcBlockHeader.getPrevBlockHash())
-            .txIds(new ArrayList<>(btcBlockHeader.getTxIds()));
+                .blockHash(btcBlockHeader.getBlockId())
+                .height(btcBlockHeader.getHeight())
+                .chainWork(btcBlockHeader.getChainWork())
+                .time(btcBlockHeader.getTime())
+                .prevBlockHash(btcBlockHeader.getPrevBlockHash())
+                .txIds(new ArrayList<>(btcBlockHeader.getTxIds()));
     }
 
     private BtcFullBlockHeadersResponse mapToBtcFullBlockHeadersResponse(BtcBlockHeader btcBlockHeader) {
         BtcBlock btcBlock = btcBlockStore.getBlockById(btcBlockHeader.getBlockId());
         return new BtcFullBlockHeadersResponse()
-            .blockHash(btcBlockHeader.getBlockId())
-            .height(btcBlockHeader.getHeight())
-            .chainWork(btcBlockHeader.getChainWork())
-            .time(btcBlockHeader.getTime())
-            .prevBlockHash(btcBlockHeader.getPrevBlockHash())
-            .txIds(new ArrayList<>(btcBlockHeader.getTxIds()))
-            .blockBytes(btcBlock.getBlockBytes());
+                .blockHash(btcBlockHeader.getBlockId())
+                .height(btcBlockHeader.getHeight())
+                .chainWork(btcBlockHeader.getChainWork())
+                .time(btcBlockHeader.getTime())
+                .prevBlockHash(btcBlockHeader.getPrevBlockHash())
+                .txIds(new ArrayList<>(btcBlockHeader.getTxIds()))
+                .blockBytes(btcBlock.getBlockBytes());
     }
 
     public BtcBlockDto getBlock(String blockId) {
@@ -100,7 +107,8 @@ public class BtcBlockService {
 
     public BtcTransactionsResponse getTransactionsByAddress(String address) {
         List<BtcAddress> transactions = btcBlockStore.getTransactionsByAddress(address);
-        return new BtcTransactionsResponse().txIds(transactions.stream().map(BtcAddress::getTxId).collect(Collectors.toList()));
+        return new BtcTransactionsResponse()
+                .txIds(transactions.stream().map(BtcAddress::getTxId).collect(Collectors.toList()));
     }
 
 }

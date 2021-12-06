@@ -35,7 +35,7 @@ public class BtcBlockstoreDbStore implements BtcBlockStore {
     @Override
     public BtcTransaction findByTxId(String transactionId) {
         return btcTransactionRepository.findByTxId(transactionId)
-            .orElseThrow(() -> new TransactionNotFound(transactionId));
+                .orElseThrow(() -> new TransactionNotFound(transactionId));
     }
 
     @Override
@@ -61,33 +61,33 @@ public class BtcBlockstoreDbStore implements BtcBlockStore {
     @Override
     public BtcBlock getBlockById(String blockId) {
         return btcBlockRepository.findById(blockId)
-            .orElseThrow(() -> new BlockNotFound(blockId));
+                .orElseThrow(() -> new BlockNotFound(blockId));
     }
 
     @Override
     public BtcBlockHeader findOrCreateBtcBlock(Block block, Integer height, Integer chainWork) {
         BtcBlockHeader btcBlockHeader = btcBlockHeaderRepository.findById(block.getHashAsString())
-            .orElseGet(() -> BtcBlockHeader.builder()
-                .blockId(block.getHashAsString())
-                .build());
+                .orElseGet(() -> BtcBlockHeader.builder()
+                        .blockId(block.getHashAsString())
+                        .build());
 
         btcBlockHeader.setTime(Math.toIntExact(block.getTimeSeconds()));
 
-        if ( block.getPrevBlockHash() ==  null){
+        if (block.getPrevBlockHash() != null) {
             btcBlockHeader.setPrevBlockHash(block.getPrevBlockHash().toString());
         }
-        if ( height != null ){
+        if (height != null) {
             btcBlockHeader.setHeight(height);
         }
-        if ( chainWork != null ){
+        if (chainWork != null) {
             btcBlockHeader.setChainWork(chainWork);
         }
 
-        if ( block.getTransactions() != null ){
+        if (block.getTransactions() != null) {
             btcBlockHeader.setTxIds(block.getTransactions().stream()
-                .map(Transaction::getTxId)
-                .map(Sha256Hash::toString)
-                .collect(Collectors.toSet()));
+                    .map(Transaction::getTxId)
+                    .map(Sha256Hash::toString)
+                    .collect(Collectors.toSet()));
 
             handleTransactionInputs(block.getHashAsString(), block.getTransactions());
             handleTransactionOutputs(block.getHashAsString(), block.getTransactions());
@@ -100,80 +100,80 @@ public class BtcBlockstoreDbStore implements BtcBlockStore {
     }
 
     private void handleTransactionOutputs(final String blockHash, List<Transaction> transactions) {
-        if (transactions == null){
+        if (transactions == null) {
             return;
         }
 
         List<TransactionOutput> transactionOutputs = transactions.stream()
-            .map(Transaction::getOutputs)
-            .findAny()
-            .orElseGet(() -> List.of());
+                .map(Transaction::getOutputs)
+                .findAny()
+                .orElseGet(() -> List.of());
 
         var btcAddresses = transactionOutputs.stream()
-            .map( txOutput -> {
-                try {
-                    var btcAddress = BtcAddress.builder()
-                        .address(txOutput.getScriptPubKey().getToAddress(txOutput.getParams()).toString())
-                        .blockId(blockHash)
-                        .txId(txOutput.getParentTransaction().getTxId().toString())
-                        .input(false)
-                        .build();
-                    return btcAddress;
-                } catch (Exception e){
-                    log.trace(e.getMessage(), e);
-                    return null;
-                }
-            })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
-        if (!btcAddresses.isEmpty()){
+                .map(txOutput -> {
+                    try {
+                        var btcAddress = BtcAddress.builder()
+                                .address(txOutput.getScriptPubKey().getToAddress(txOutput.getParams()).toString())
+                                .blockId(blockHash)
+                                .txId(txOutput.getParentTransaction().getTxId().toString())
+                                .input(false)
+                                .build();
+                        return btcAddress;
+                    } catch (Exception e) {
+                        log.trace(e.getMessage(), e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        if (!btcAddresses.isEmpty()) {
             btcAddressRepository.saveAll(btcAddresses);
         }
     }
 
     private void handleTransactionInputs(final String blockHash, List<Transaction> transactions) {
-        if (transactions == null){
+        if (transactions == null) {
             return;
         }
 
         List<TransactionInput> transactionInputs = transactions.stream()
-            .map(Transaction::getInputs)
-            .findAny()
-            .orElseGet(() -> List.of());
+                .map(Transaction::getInputs)
+                .findAny()
+                .orElseGet(() -> List.of());
 
         var btcAddresses = transactionInputs.stream()
-            .filter(txInput -> !txInput.isCoinBase())
-            .map( txInput -> {
-                try {
-                    var btcAddress = BtcAddress.builder()
-                        .address(txInput.getScriptSig().getToAddress(txInput.getParams()).toString())
-                        .blockId(blockHash)
-                        .txId(txInput.getParentTransaction().getTxId().toString())
-                        .input(true)
-                        .build();
-                    return btcAddress;
-                } catch (Exception e){
-                    log.trace(e.getMessage(), e);
-                    return null;
-                }
-            })
-            .filter(Objects::nonNull)
-            .collect(Collectors.toSet());
+                .filter(txInput -> !txInput.isCoinBase())
+                .map(txInput -> {
+                    try {
+                        var btcAddress = BtcAddress.builder()
+                                .address(txInput.getScriptSig().getToAddress(txInput.getParams()).toString())
+                                .blockId(blockHash)
+                                .txId(txInput.getParentTransaction().getTxId().toString())
+                                .input(true)
+                                .build();
+                        return btcAddress;
+                    } catch (Exception e) {
+                        log.trace(e.getMessage(), e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
 
-        if (!btcAddresses.isEmpty()){
+        if (!btcAddresses.isEmpty()) {
             btcAddressRepository.saveAll(btcAddresses);
         }
     }
 
     private void findOrCreateBtcBlockPayload(Block block) {
-        if (block.getTransactions() == null){
+        if (block.getTransactions() == null) {
             return;
         }
 
         BtcBlock btcB = btcBlockRepository.findById(block.getHashAsString())
-            .orElseGet(() -> BtcBlock.builder()
-                .blockId(block.getHashAsString())
-                .build());
+                .orElseGet(() -> BtcBlock.builder()
+                        .blockId(block.getHashAsString())
+                        .build());
         btcB.setBlockBytes(block.unsafeBitcoinSerialize());
         btcBlockRepository.save(btcB);
     }
