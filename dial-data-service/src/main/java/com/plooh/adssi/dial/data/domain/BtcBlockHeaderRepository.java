@@ -17,11 +17,7 @@ public interface BtcBlockHeaderRepository extends JpaRepository<BtcBlockHeader, 
 
     List<BtcBlockHeader> findByTimeGreaterThanEqual(int startTime, Pageable pageable);
 
-    @Query(value = "SELECT b FROM BTC_BLOCK_HEADERS b LEFT JOIN BTC_BLOCK_HEADERS_TRANSACTIONS tx " +
-        "ON b.BLOCK_ID = tx.BLOCK_ID " +
-        "WHERE tx.TX_ID = :txId " +
-        "AND BLOCK_HEIGHT IS NOT NULL"
-        , nativeQuery = true)
+    @Query(value = "SELECT b FROM BtcBlockHeader b left join b.txIds as txId where txId =:txId AND b.height IS NOT NULL")
     Optional<BtcBlockHeader> findByTxId(@Param("txId") String txId);
 
 }
