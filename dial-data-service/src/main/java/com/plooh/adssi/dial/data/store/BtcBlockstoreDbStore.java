@@ -120,7 +120,7 @@ public class BtcBlockstoreDbStore implements BtcBlockStore {
                                 .build();
                         return btcAddress;
                     } catch (Exception e) {
-                        log.warn(e.getMessage(), e);
+                        log.trace(e.getMessage(), e);
                         return null;
                     }
                 })
@@ -153,7 +153,7 @@ public class BtcBlockstoreDbStore implements BtcBlockStore {
                                 .build();
                         return btcAddress;
                     } catch (Exception e) {
-                        log.warn(e.getMessage(), e);
+                        log.trace(e.getMessage(), e);
                         return null;
                     }
                 })
