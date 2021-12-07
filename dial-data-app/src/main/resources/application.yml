@@ -1,6 +1,9 @@
 spring:
   application:
     name: dial-data
+#   profiles:
+#     active:
+#     - postgres
 
 server:
   error:

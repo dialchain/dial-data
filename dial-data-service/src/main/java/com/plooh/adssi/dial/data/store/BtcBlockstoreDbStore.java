@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
+import org.bitcoinj.script.ScriptPattern;
 import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
@@ -112,23 +113,36 @@ public class BtcBlockstoreDbStore implements BtcBlockStore {
         var btcAddresses = transactionOutputs.stream()
                 .map(txOutput -> {
                     try {
-                        var btcAddress = BtcAddress.builder()
-                                .address(txOutput.getScriptPubKey().getToAddress(txOutput.getParams()).toString())
-                                .blockId(blockHash)
-                                .txId(txOutput.getParentTransaction().getTxId().toString())
-                                .input(false)
-                                .build();
-                        return btcAddress;
+                        Address _toAddress = _toAddress(txOutput);
+                        if (_toAddress != null) {
+                            return BtcAddress.builder()
+                                    .address(_toAddress.toString())
+                                    .blockId(blockHash)
+                                    .txId(txOutput.getParentTransaction().getTxId().toString())
+                                    .input(false)
+                                    .build();
+                        }
                     } catch (Exception e) {
-                        log.trace(e.getMessage(), e);
-                        return null;
+                        log.warn(e.getMessage(), e);
                     }
+                    return null;
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
         if (!btcAddresses.isEmpty()) {
             btcAddressRepository.saveAll(btcAddresses);
         }
+    }
+
+    private Address _toAddress(TransactionOutput output) {
+        var script = output.getScriptPubKey();
+        Address toAddress = null;
+        if (ScriptPattern.isP2PK(script)) {
+            toAddress = script.getToAddress(output.getParams(), true);
+        } else if (ScriptPattern.isP2PKH(script) || ScriptPattern.isP2WH(script) || ScriptPattern.isP2SH(script)) {
+            toAddress = script.getToAddress(output.getParams());
+        }
+        return toAddress;
     }
 
     private void handleTransactionInputs(final String blockHash, List<Transaction> transactions) {
@@ -145,17 +159,21 @@ public class BtcBlockstoreDbStore implements BtcBlockStore {
                 .filter(txInput -> !txInput.isCoinBase())
                 .map(txInput -> {
                     try {
-                        var btcAddress = BtcAddress.builder()
-                                .address(txInput.getScriptSig().getToAddress(txInput.getParams()).toString())
-                                .blockId(blockHash)
-                                .txId(txInput.getParentTransaction().getTxId().toString())
-                                .input(true)
-                                .build();
-                        return btcAddress;
+                        Address address = findAddress(txInput);
+                        if (address != null) {
+                            var btcAddress = BtcAddress.builder()
+                                    .address(address.toString())
+                                    .blockId(blockHash)
+                                    .txId(txInput.getParentTransaction().getTxId().toString())
+                                    .input(true)
+                                    .build();
+                            return btcAddress;
+
+                        }
                     } catch (Exception e) {
                         log.trace(e.getMessage(), e);
-                        return null;
                     }
+                    return null;
                 })
                 .filter(Objects::nonNull)
                 .collect(Collectors.toSet());
@@ -163,6 +181,35 @@ public class BtcBlockstoreDbStore implements BtcBlockStore {
         if (!btcAddresses.isEmpty()) {
             btcAddressRepository.saveAll(btcAddresses);
         }
+    }
+
+    private Address findAddress(TransactionInput input) {
+        TransactionOutPoint outpoint = input.getOutpoint();
+        // final fromTxHash = outpoint.hash;
+        String outputTxId = outpoint.getHash().toString();
+        BtcBlockHeader blockHeadersByTxId = findBlockHeadersByTxId(outputTxId).orElse(null);
+        TransactionOutput relevantOutput = null;
+        if (blockHeadersByTxId != null) {
+            BtcBlock blockById = getBlockById(blockHeadersByTxId.getBlockId());
+            Block block = new Block(input.getParams(), blockById.getBlockBytes(),
+                    input.getParams().getDefaultSerializer(), 0);
+            Transaction fromTx = block.getTransactions().stream()
+                    .filter(tx -> tx.getTxId().toString().equals(outputTxId)).findFirst().orElse(null);
+            List<TransactionOutput> relevantOutputs = fromTx.getOutputs();
+            for (TransactionOutput ro : relevantOutputs) {
+                try {
+                    input.verify(ro);
+                    relevantOutput = ro;
+                    break;
+                } catch (Exception e) {
+                    // ignore.
+                }
+            }
+        }
+        if (relevantOutput != null) {
+            return _toAddress(relevantOutput);
+        }
+        return null;
     }
 
     private void findOrCreateBtcBlockPayload(Block block) {

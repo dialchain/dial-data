@@ -1,6 +1,6 @@
 spring:
   datasource:
-#    url: jdbc:postgresql://localhost:5432/dialdatadb
+    # url: jdbc:postgresql://localhost:5432/dialdatadb
     url: jdbc:postgresql://dial-data.clg6kxm72irr.us-east-1.rds.amazonaws.com:5432/dialDB
     username: user
     password: password
