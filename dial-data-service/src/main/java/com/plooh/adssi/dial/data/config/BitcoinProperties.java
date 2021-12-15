@@ -21,9 +21,6 @@ public class BitcoinProperties {
     @NotNull
     private Boolean localhost;
 
-    @NotNull
-    private String blockstore;
-
     // fullStoreDepth – The number of blocks of history stored in full (something like 1000 is pretty safe)
     private int fullStoreDepth = 1000;
 

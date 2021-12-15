@@ -1,4 +1,4 @@
-package com.plooh.adssi.dial.data.store;
+package com.plooh.adssi.dial.data.repository;
 
 import com.plooh.adssi.dial.data.domain.*;
 import com.plooh.adssi.dial.data.exception.BlockNotFound;
@@ -11,7 +11,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.bitcoinj.core.*;
 import org.bitcoinj.script.ScriptPattern;
-import org.springframework.context.annotation.Profile;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,8 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Slf4j
 @RequiredArgsConstructor
 @Service
-@Profile("postgres")
-public class BtcBlockstoreDbStore implements BtcBlockStore {
+public class BtcBlockStore {
 
     private final BtcTransactionRepository btcTransactionRepository;
     private final BtcBlockHeaderRepository btcBlockHeaderRepository;
@@ -28,44 +26,36 @@ public class BtcBlockstoreDbStore implements BtcBlockStore {
     private final BtcAddressRepository btcAddressRepository;
 
     @Transactional
-    @Override
     public BtcTransaction save(BtcTransaction transaction) {
         return btcTransactionRepository.save(transaction);
     }
 
-    @Override
     public BtcTransaction findByTxId(String transactionId) {
         return btcTransactionRepository.findByTxId(transactionId)
                 .orElseThrow(() -> new TransactionNotFound(transactionId));
     }
 
-    @Override
     public Optional<BtcBlockHeader> findBlockHeadersByTxId(String txId) {
         return btcBlockHeaderRepository.findByTxId(txId);
     }
 
-    @Override
     public List<BtcAddress> getTransactionsByAddress(String address) {
         return btcAddressRepository.findByAddress(address);
     }
 
-    @Override
     public List<BtcBlockHeader> getBlocksByHeight(int startHeight, int endHeight) {
         return btcBlockHeaderRepository.findByHeightBetween(startHeight, endHeight);
     }
 
-    @Override
     public List<BtcBlockHeader> getBlocksByTime(Integer startTime, Integer quantity) {
         return btcBlockHeaderRepository.findByTimeGreaterThanEqual(startTime, PageRequest.of(0, quantity.intValue()));
     }
 
-    @Override
     public BtcBlock getBlockById(String blockId) {
         return btcBlockRepository.findById(blockId)
                 .orElseThrow(() -> new BlockNotFound(blockId));
     }
 
-    @Override
     public BtcBlockHeader findOrCreateBtcBlock(Block block, Integer height, Integer chainWork) {
         BtcBlockHeader btcBlockHeader = btcBlockHeaderRepository.findById(block.getHashAsString())
                 .orElseGet(() -> BtcBlockHeader.builder()

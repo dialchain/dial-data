@@ -6,7 +6,7 @@ import static org.mockito.Mockito.*;
 
 import com.plooh.adssi.dial.data.domain.BtcBlockHeader;
 import com.plooh.adssi.dial.data.domain.BtcTransaction;
-import com.plooh.adssi.dial.data.store.BtcBlockStore;
+import com.plooh.adssi.dial.data.repository.BtcBlockStore;
 import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
