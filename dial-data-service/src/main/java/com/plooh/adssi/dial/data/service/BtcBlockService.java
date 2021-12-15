@@ -3,7 +3,7 @@ package com.plooh.adssi.dial.data.service;
 import com.plooh.adssi.dial.data.bitcoin.model.*;
 import com.plooh.adssi.dial.data.domain.*;
 import com.plooh.adssi.dial.data.exception.TransactionNotFound;
-import com.plooh.adssi.dial.data.store.BtcBlockStore;
+import com.plooh.adssi.dial.data.repository.BtcBlockStore;
 import java.util.*;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;

@@ -1,9 +1,16 @@
 spring:
   application:
     name: dial-data
-#   profiles:
-#     active:
-#     - postgres
+  datasource:
+    url: jdbc:postgresql://dial-data.clg6kxm72irr.us-east-1.rds.amazonaws.com:5432/dialDB
+    username: user
+    password: password
+  jpa:
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 server:
   error:
@@ -20,6 +27,9 @@ management:
     web:
       exposure:
         include: health
+  health:
+    db:
+      enabled: true
 
 dial:
   data:
@@ -32,7 +42,6 @@ dial:
     bitcoin:
       network: testnet # Available options: testnet, regtest, main
       localhost: false
-      blockstore: memory # Available options: memory, Postgres
 
 logging:
   level:
