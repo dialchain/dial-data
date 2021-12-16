@@ -39,8 +39,15 @@ public class BtcBlockStore {
         return btcBlockHeaderRepository.findByTxId(txId);
     }
 
+    /**
+     * TODO Willis. We could add start annd count to this interface.
+     * For now i limited it to the first 100.
+     * 
+     * @param address
+     * @return
+     */
     public List<BtcAddress> getTransactionsByAddress(String address) {
-        return btcAddressRepository.findByAddress(address);
+        return btcAddressRepository.findByAddress(address, PageRequest.of(0, 100));
     }
 
     public List<BtcBlockHeader> getBlocksByHeight(int startHeight, int endHeight) {
