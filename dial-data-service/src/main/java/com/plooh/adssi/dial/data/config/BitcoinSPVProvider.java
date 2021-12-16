@@ -38,15 +38,10 @@ public class BitcoinSPVProvider {
             peerGroup.addPeerDiscovery(new DnsDiscovery(params));
         }
 
-        peerGroup.addOnTransactionBroadcastListener(Threading.USER_THREAD, (peer, t) -> {
-            log.debug("=== Broadcasted transaction hash is {} ===", t.getTxId());
-            btcBlockService.findOrCreateBtcTransaction(t, null);
-        });
-
         peerGroup.addBlocksDownloadedEventListener(Threading.USER_THREAD, (peer, block, filteredBlock, blocksLeft) -> {
             Optional.ofNullable(block.getTransactions()).ifPresent( txs -> {
                 txs.forEach(tx -> btcBlockService.findOrCreateBtcTransaction(tx, block.getHash().toString()));
-                });
+            });
             btcBlockService.findOrCreateBtcBlock(block, null, null);
         });
 
