@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 public class BtcBlockStore {
 
-    private final DialBtcBlockStore dialBlockStore;
+    private final DialBtcBlockStore dialBtcBlockStore;
     private final BlockStore blockStore;
 
     public Optional<byte[]> getChainhead() {
@@ -57,21 +57,21 @@ public class BtcBlockStore {
     }
 
     public Optional<byte[]> getBlockHashForTxId(byte[] txId) {
-        return dialBlockStore.get(txId);
+        return dialBtcBlockStore.get(txId);
     }
 
     public Optional<byte[]> getTxsForAddress(byte[] address) {
-        return dialBlockStore.get(address);
+        return dialBtcBlockStore.get(address);
     }
 
     public Optional<byte[]> getBlockForBlockHash(byte[] blockHash) {
-        return dialBlockStore.get(blockHash);
+        return dialBtcBlockStore.get(blockHash);
     }
 
     public Optional<byte[]> getTxIdsForBlockHash(byte[] blockHash) {
-        return dialBlockStore.get(blockHash)
-                .map(blockByte -> new Block(dialBlockStore.getParams(), blockByte,
-                        dialBlockStore.getParams().getDefaultSerializer(),
+        return dialBtcBlockStore.get(blockHash)
+                .map(blockByte -> new Block(dialBtcBlockStore.getParams(), blockByte,
+                        dialBtcBlockStore.getParams().getDefaultSerializer(),
                         blockByte.length))
                 .map(block -> new BtcBlockTxIds(getTxIds(block)))
                 .map(btcBlockTxIds -> btcBlockTxIds.toBytes());
@@ -93,13 +93,14 @@ public class BtcBlockStore {
     public void storeBtcBlock(Block block) {
         byte[] blockHashBytes = block.getHash().getBytes();
         // Store the block bytes
-        dialBlockStore.put(blockHashBytes, block.unsafeBitcoinSerialize());
+        dialBtcBlockStore.put(blockHashBytes, block.unsafeBitcoinSerialize());
         if (block.getTransactions() != null) {
             // Store the addresses frominput and output
             handleTransactionInputs(block.getHash(), block.getTransactions());
             handleTransactionOutputs(block.getHash(), block.getTransactions());
             // Map each txId to the blockId
-            block.getTransactions().stream().forEach(tx -> dialBlockStore.put(tx.getTxId().getBytes(), blockHashBytes));
+            block.getTransactions().stream()
+                    .forEach(tx -> dialBtcBlockStore.put(tx.getTxId().getBytes(), blockHashBytes));
         }
     }
 
@@ -127,9 +128,9 @@ public class BtcBlockStore {
         btcAddressesBytes.entrySet().forEach(e -> {
             byte[] addressHash = e.getKey().getHash();
             BtcBytesList newEntries = e.getValue();
-            BtcBytesList bl = dialBlockStore.get(addressHash).map(b -> BtcBytesList.fromBytes(b).merge(newEntries))
+            BtcBytesList bl = dialBtcBlockStore.get(addressHash).map(b -> BtcBytesList.fromBytes(b).merge(newEntries))
                     .orElseGet(() -> newEntries);
-            dialBlockStore.put(addressHash, bl.sort().toBytes());
+            dialBtcBlockStore.put(addressHash, bl.sort().toBytes());
         });
     }
 
@@ -186,8 +187,9 @@ public class BtcBlockStore {
     }
 
     private Optional<BtcAddressTx> relevantOutput(Sha256Hash blockHash, TransactionInput input) {
-        return dialBlockStore.get(blockHash.getBytes())
-                .map(b -> new Block(dialBlockStore.getParams(), b, dialBlockStore.getParams().getDefaultSerializer(),
+        return dialBtcBlockStore.get(blockHash.getBytes())
+                .map(b -> new Block(dialBtcBlockStore.getParams(), b,
+                        dialBtcBlockStore.getParams().getDefaultSerializer(),
                         b.length))
                 .map(block -> matchingTx(block, input.getOutpoint().getHash()).orElse(null))
                 .map(fromTx -> findRelevantOutput(fromTx, input).orElse(null))
@@ -228,7 +230,7 @@ public class BtcBlockStore {
     }
 
     public NetworkParameters getParams() {
-        return dialBlockStore.getParams();
+        return dialBtcBlockStore.getParams();
     }
 
 }

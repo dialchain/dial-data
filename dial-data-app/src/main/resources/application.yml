@@ -1,16 +1,6 @@
 spring:
   application:
     name: dial-data
-  datasource:
-    username: user
-    password: password
-  jpa:
-    open-in-view: false
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 server:
   error:
@@ -46,5 +36,3 @@ dial:
 logging:
   level:
     root: INFO
-
-spring.profiles.active: local
