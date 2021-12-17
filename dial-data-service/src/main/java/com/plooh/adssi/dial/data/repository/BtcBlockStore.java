@@ -181,19 +181,18 @@ public class BtcBlockStore {
     }
 
     private Optional<BtcAddressTx> findAddress(TransactionInput input) {
-        return findBlockHeadersByTxId(input.getOutpoint().getHash().getBytes())
-                .map(b -> BtcBlockHeader.fromBytes(dialBlockStore.getParams(), b))
-                .map(h -> relevantOutput(h, input)).get();
+        return getBlockHashForTxId(input.getOutpoint().getHash().getBytes())
+                .map(h -> relevantOutput(Sha256Hash.wrap(h), input)).get();
     }
 
-    private Optional<BtcAddressTx> relevantOutput(BtcBlockHeader h, TransactionInput input) {
-        return dialBlockStore.get(h.getStoredBlock().getHeader().getHash().getBytes())
+    private Optional<BtcAddressTx> relevantOutput(Sha256Hash blockHash, TransactionInput input) {
+        return dialBlockStore.get(blockHash.getBytes())
                 .map(b -> new Block(dialBlockStore.getParams(), b, dialBlockStore.getParams().getDefaultSerializer(),
                         b.length))
                 .map(block -> matchingTx(block, input.getOutpoint().getHash()).orElse(null))
                 .map(fromTx -> findRelevantOutput(fromTx, input).orElse(null))
                 .map(out -> new BtcAddressTx(true, input.getOutpoint().getHash(),
-                        h.getStoredBlock().getHeader().getHash(), _toAddress(out)));
+                        blockHash, _toAddress(out)));
     }
 
     private Optional<TransactionOutput> findRelevantOutput(Transaction fromTx, TransactionInput input) {

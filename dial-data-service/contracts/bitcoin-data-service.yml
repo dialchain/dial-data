@@ -10,7 +10,7 @@ servers:
   - url: https://localhost:9092/
     description: Local
   - url: https://dial-data.mon-wallet.com/
-    description: Integration
+    description: Integration sa S
 paths:
   /btc/transactions:
     post:
@@ -46,6 +46,28 @@ paths:
               schema:
                 type: string
                 format: binary
+  /btc/blocks/{blockHash}/txIds:
+    get:
+      tags:
+        - bitcoin
+      operationId: getTxIdsForBlockHash
+      description: |
+        Retrieve the list of transaction ids for the given blockHash
+      summary: Retrieve the list of transaction ids for the given blockHash
+      parameters:    
+        - in: path    
+          name: blockHash    
+          required: true    
+          schema:               
+            type: string      
+      responses:
+        "200":
+          description: xxx2
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
   /btc/blocks/{blockHash}/header:
     get:
       tags:
@@ -54,6 +76,12 @@ paths:
       description: |
         Retrieve the block header for the given blockHash
       summary: Retrieve the block header for the given blockHash
+      parameters:    
+        - in: path    
+          name: blockHash    
+          required: true    
+          schema:               
+            type: string      
       responses:
         "200":
           description: xxx
@@ -70,6 +98,12 @@ paths:
       description: |
         Retrieves the blockHash for the given transaction
       summary: Retrieves the blockHash for the given transaction
+      parameters:    
+        - in: path    
+          name: txId    
+          required: true    
+          schema:               
+            type: string      
       responses:
         "200":
           description: xxx
@@ -86,6 +120,12 @@ paths:
       description: |
         Retrieves the list of transaction ids associated with the given address
       summary: Retrieves the list of transaction ids associated with the given address
+      parameters:    
+        - in: path    
+          name: address    
+          required: true    
+          schema:               
+            type: string      
       responses:
         "200":
           description: xxx
@@ -102,22 +142,12 @@ paths:
       description: |
         Retrieve the block for the given blockHash
       summary: Retrieve the block for the given blockHash
-      responses:
-        "200":
-          description: xxx
-          content:
-            application/octet-stream:
-              schema:
-                type: string
-                format: binary
-  /btc/blocks/{blockHash}/txIds:
-    get:
-      tags:
-        - bitcoin
-      operationId: getTxIdsForBlockHash
-      description: |
-        Retrieve the list of transaction ids for the given blockHash
-      summary: Retrieve the list of transaction ids for the given blockHash
+      parameters:    
+        - in: path    
+          name: blockHash    
+          required: true    
+          schema:               
+            type: string      
       responses:
         "200":
           description: xxx

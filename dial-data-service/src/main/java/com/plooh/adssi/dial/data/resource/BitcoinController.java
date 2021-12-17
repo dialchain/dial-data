@@ -1,21 +1,28 @@
 package com.plooh.adssi.dial.data.resource;
 
+import java.io.IOException;
+
 import com.plooh.adssi.dial.data.bitcoin.BitcoinApi;
-import com.plooh.adssi.dial.data.bitcoin.model.*;
+import com.plooh.adssi.dial.data.bitcoin.model.BtcTransactionDto;
 import com.plooh.adssi.dial.data.exception.AddressNotFound;
 import com.plooh.adssi.dial.data.exception.BlockNotFound;
 import com.plooh.adssi.dial.data.exception.NotChainHead;
 import com.plooh.adssi.dial.data.exception.TransactionNotFound;
 import com.plooh.adssi.dial.data.repository.BtcBlockStore;
-import com.plooh.adssi.dial.data.service.BtcBlockService;
 import com.plooh.adssi.dial.data.service.PeerGroupService;
-import lombok.AllArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import org.bitcoinj.core.Address;
 import org.bitcoinj.core.Utils;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+
+import lombok.AllArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @AllArgsConstructor
@@ -32,38 +39,62 @@ public class BitcoinController implements BitcoinApi {
     }
 
     @Override
-    public byte[] getChainhead() {
-        return btcBlockService.getChainhead().orElseThrow(() -> new NotChainHead());
+    public ResponseEntity<Resource> getChainhead() {
+        return res(btcBlockService.getChainhead().orElseThrow(() -> new NotChainHead()));
+    }
+
+    private ResponseEntity<Resource> res(byte[] bytes) {
+        Resource resource = new ByteArrayResource(bytes);
+
+        HttpHeaders headers = new HttpHeaders();
+        // headers.add(HttpHeaders.CONTENT_DISPOSITION, String.format("attachment;
+        // filename=%s", filename));
+        try {
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .contentLength(resource.contentLength())
+                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
+                    .body(resource);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
-    public byte[] getBlockHeadersForBlockHash(String blockHash) {
-        return btcBlockService.getBlockHeadersByBlockHash(Utils.HEX.decode(blockHash))
+    public ResponseEntity<Resource> getBlockHeadersForBlockHash(String blockHash) {
+        var response = btcBlockService.getBlockHeadersForBlockHash(Utils.HEX.decode(blockHash))
                 .orElseThrow(() -> new BlockNotFound(blockHash));
+        return res(response);
     }
 
     @Override
-    public byte[] getBlockHashForTxId(String txId) {
-        return btcBlockService.getBlockHashByTxId(Utils.HEX.decode(txId))
+    public ResponseEntity<Resource> getBlockHashForTxId(String txId) {
+        var response = btcBlockService.getBlockHashForTxId(Utils.HEX.decode(txId))
                 .orElseThrow(() -> new TransactionNotFound(txId));
+        return res(response);
     }
 
     @Override
-    public byte[] getTxsForAddress(String address) {
+    public ResponseEntity<Resource> getTxsForAddress(String address) {
 
-        return btcBlockService.getTxsForAddress(Address.fromString(btcBlockService.getParams(), address).getHash())
+        var response = btcBlockService
+                .getTxsForAddress(Address.fromString(btcBlockService.getParams(), address).getHash())
                 .orElseThrow(() -> new AddressNotFound(address));
+        return res(response);
     }
 
     @Override
-    public byte[] getBlockForBlockHash(String blockHash) {
-        return btcBlockService.getBlockForBlockHash(Utils.HEX.decode(blockHash))
+    public ResponseEntity<Resource> getBlockForBlockHash(String blockHash) {
+        var response = btcBlockService.getBlockForBlockHash(Utils.HEX.decode(blockHash))
                 .orElseThrow(() -> new BlockNotFound(blockHash));
+        return res(response);
     }
 
     @Override
-    public byte[] getTxIdsForBlockHash(String blockHash) {
-        return btcBlockService.getTxIdsForBlockId(Utils.HEX.decode(blockHash)).orElseThrow(() -> Bnew BlockNotFound(blockHash));
+    public ResponseEntity<Resource> getTxIdsForBlockHash(String blockHash) {
+        var response = btcBlockService.getTxIdsForBlockHash(Utils.HEX.decode(blockHash))
+                .orElseThrow(() -> new BlockNotFound(blockHash));
+        return res(response);
     }
 
 }
