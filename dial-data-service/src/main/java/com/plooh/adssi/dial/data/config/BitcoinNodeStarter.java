@@ -25,7 +25,7 @@ public class BitcoinNodeStarter {
             peerGroup.downloadBlockChain();
             log.info("=== Download BlockChain completed... ===");
         });
-
+        // peerGroup.startAsync();
     }
 
 }
