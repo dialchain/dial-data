@@ -2,10 +2,18 @@ package com.plooh.adssi.dial.data.resource;
 
 import com.plooh.adssi.dial.data.bitcoin.BitcoinApi;
 import com.plooh.adssi.dial.data.bitcoin.model.*;
+import com.plooh.adssi.dial.data.exception.AddressNotFound;
+import com.plooh.adssi.dial.data.exception.BlockNotFound;
+import com.plooh.adssi.dial.data.exception.NotChainHead;
+import com.plooh.adssi.dial.data.exception.TransactionNotFound;
+import com.plooh.adssi.dial.data.repository.BtcBlockStore;
 import com.plooh.adssi.dial.data.service.BtcBlockService;
 import com.plooh.adssi.dial.data.service.PeerGroupService;
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import org.bitcoinj.core.Address;
+import org.bitcoinj.core.Utils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -14,7 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class BitcoinController implements BitcoinApi {
 
-    private final BtcBlockService btcBlockService;
+    private final BtcBlockStore btcBlockService;
     private final PeerGroupService peerGroupService;
 
     @Override
@@ -24,33 +32,38 @@ public class BitcoinController implements BitcoinApi {
     }
 
     @Override
-    public ResponseEntity<BtcTransactionsResponse> getTransactionsByAddress(String address) {
-        return ResponseEntity.ok(btcBlockService.getTransactionsByAddress(address));
+    public byte[] getChainhead() {
+        return btcBlockService.getChainhead().orElseThrow(() -> new NotChainHead());
     }
 
     @Override
-    public ResponseEntity<BtcCheckTransactionResponse> checkTransaction(String txId) {
-        return ResponseEntity.ok(btcBlockService.checkTransaction(txId));
+    public byte[] getBlockHeadersForBlockHash(String blockHash) {
+        return btcBlockService.getBlockHeadersByBlockHash(Utils.HEX.decode(blockHash))
+                .orElseThrow(() -> new BlockNotFound(blockHash));
     }
 
     @Override
-    public ResponseEntity<BtcFullBlockHeadersResponse> getBlockByTransactionId(String txId) {
-        return ResponseEntity.ok(btcBlockService.findBlockByTransactionId(txId));
+    public byte[] getBlockHashForTxId(String txId) {
+        return btcBlockService.getBlockHashByTxId(Utils.HEX.decode(txId))
+                .orElseThrow(() -> new TransactionNotFound(txId));
     }
 
     @Override
-    public ResponseEntity<BtcBlockDto> getBlock(String blockId) {
-        return ResponseEntity.ok(btcBlockService.getBlock(blockId));
+    public byte[] getTxsForAddress(String address) {
+
+        return btcBlockService.getTxsForAddress(Address.fromString(btcBlockService.getParams(), address).getHash())
+                .orElseThrow(() -> new AddressNotFound(address));
     }
 
     @Override
-    public ResponseEntity<BtcBlockHeadersResponse> getBlocksByHeight(Integer startHeight, Integer endHeight) {
-        return ResponseEntity.ok(btcBlockService.getBlocksByHeight(startHeight, endHeight));
+    public byte[] getBlockForBlockHash(String blockHash) {
+        return btcBlockService.getBlockForBlockHash(Utils.HEX.decode(blockHash))
+                .orElseThrow(() -> new BlockNotFound(blockHash));
     }
 
     @Override
-    public ResponseEntity<BtcBlockHeadersResponse> getBlocksByTime(Integer startTime, Integer quantity) {
-        return ResponseEntity.ok(btcBlockService.getBlocksByTime(startTime, quantity));
+    public byte[] getTxIdsForBlockHash(String blockHash) {
+        return btcBlockService.getTxIdsForBlockId(Utils.HEX.decode(blockHash)).orElseThrow(() -> Bnew BlockNotFound(blockHash));
     }
 
 }

@@ -44,10 +44,8 @@
         <dependency>
             <groupId>org.fusesource.leveldbjni</groupId>
             <artifactId>leveldbjni-all</artifactId>
-            <version>1.8</version>
-            <scope>runtime</scope>
         </dependency>
-		<!-- Testing dependencies -->
+    <!-- Testing dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>

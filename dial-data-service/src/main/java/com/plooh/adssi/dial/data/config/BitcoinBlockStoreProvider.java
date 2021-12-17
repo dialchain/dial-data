@@ -21,21 +21,10 @@ public class BitcoinBlockStoreProvider {
 
     private final BitcoinProperties bitcoinConfig;
 
-    // @Value("${spring.datasource.url}")
-    // private String url;
-
-    // @Value("${spring.datasource.username}")
-    // private String username;
-
-    // @Value("${spring.datasource.password}")
-    // private String password;
-
     @Bean
     @Primary
     public BlockStore blockStore() throws BlockStoreException {
-        // var jdbcUrl = JDBCUrl.parse(url).orElseThrow(() -> new MalformedURLException(
-        // String.format("The connection [%s] url to the postgres database is
-        // malformed")));
+        // TODO externalize
         String usrHome = System.getProperty("user.home");
         File usrHomeFile = new File(usrHome);
         log.info("=== Using the LevelDB Blockstore - Directory: {} ===", usrHomeFile.getAbsolutePath());

@@ -3,9 +3,9 @@ package com.plooh.adssi.dial.data.config;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Instant;
-import java.util.Date;
-import java.util.Optional;
 
+import com.plooh.adssi.dial.data.repository.BtcBlockStore;
+import com.plooh.adssi.dial.data.repository.DialBtcBlockStore;
 import com.plooh.adssi.dial.data.service.BtcBlockService;
 
 import org.bitcoinj.core.BlockChain;
@@ -30,7 +30,7 @@ public class BitcoinSPVProvider {
 
     private final BitcoinProperties bitcoinProperties;
     private final BlockStore blockStore;
-    private final BtcBlockService btcBlockService;
+    private final BtcBlockStore btcBlockService;
 
     @Bean
     @Primary
@@ -39,6 +39,7 @@ public class BitcoinSPVProvider {
         final NetworkParameters params = bitcoinProperties.getParams();
         BlockChain chain = new BlockChain(params, blockStore);
         PeerGroup peerGroup = new PeerGroup(params, chain);
+        // TODO extgernaalize
         Instant instant = Instant.parse("2021-12-15T00:00:00.00Z");
         peerGroup.setFastCatchupTimeSecs(instant.toEpochMilli() / 1000);
 
@@ -49,15 +50,8 @@ public class BitcoinSPVProvider {
         }
 
         peerGroup.addBlocksDownloadedEventListener(Threading.USER_THREAD, (peer, block, filteredBlock, blocksLeft) -> {
-            Optional.ofNullable(block.getTransactions()).ifPresent(txs -> {
-                txs.forEach(tx -> btcBlockService.findOrCreateBtcTransaction(tx, block.getHash().toString()));
-            });
-            btcBlockService.findOrCreateBtcBlock(block, null, null);
+            btcBlockService.storeBtcBlock(block);
         });
-
-        chain.addNewBestBlockListener(Threading.USER_THREAD,
-                block -> btcBlockService.findOrCreateBtcBlock(block.getHeader(), block.getHeight(),
-                        block.getChainWork().intValue()));
 
         return peerGroup;
     }

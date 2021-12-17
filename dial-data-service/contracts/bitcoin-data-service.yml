@@ -30,211 +30,104 @@ paths:
       responses:
         "202":
           description: Transaction successfully submitted.
-  /btc/transactions/address/{address}:
+  /btc/blocks/chainhead:
     get:
       tags:
         - bitcoin
-      operationId: getTransactionsByAddress
+      operationId: getChainhead
       description: |
-        Get transaction by address
-      summary: Get transaction by address
-      parameters:
-        - in: path
-          name: address
-          required: true
-          schema:
-            type: string
+        Return the header of the latest block in the best chain
+      summary: Return the header of the latest block in the best chain
       responses:
         "200":
-          description: Get transaction associated with the address
+          description: xxx
           content:
-            application/json:
+            application/octet-stream:
               schema:
-                $ref: '#/components/schemas/TransactionsResponse'
-        "404":
-          description: Address not found.
-  /btc/transactions/{txId}/check:
+                type: string
+                format: binary
+  /btc/blocks/{blockHash}/header:
     get:
       tags:
         - bitcoin
-      operationId: checkTransaction
+      operationId: getBlockHeadersForBlockHash
       description: |
-        A submitted transaction is considered valid, when the transaction was forwarded to the MemPool nodes. Even though the bitcoin
-        data service can validate transaction, having those transactions reported by other nodes as seen in the MemPool is part of
-        validating the correctness of the transaction (Format, Signature)
-      summary: Check if a transaction submitted to the network is valid.
-      parameters:
-        - in: path
-          name: txId
-          required: true
-          schema:
-            type: string
+        Retrieve the block header for the given blockHash
+      summary: Retrieve the block header for the given blockHash
       responses:
         "200":
-          description: Number of reporting nodes. A value greater than 0 means that the transaction is in the mempool.
+          description: xxx
           content:
-            application/json:
+            application/octet-stream:
               schema:
-                $ref: '#/components/schemas/CheckTransactionResponse'
-        "404":
-          description: Transaction not found.
-  /btc/blocks/transaction/{txId}:
+                type: string
+                format: binary
+  /btc/txs/{txId}/blockHash:
     get:
       tags:
         - bitcoin
-      operationId: getBlockByTransactionId
+      operationId: getBlockHashForTxId
       description: |
-        Find the block hosting a given transaction by id.
-      summary: Find the block hosting a given transaction by id
-      parameters:
-        - in: path
-          name: txId
-          required: true
-          schema:
-            type: string
+        Retrieves the blockHash for the given transaction
+      summary: Retrieves the blockHash for the given transaction
       responses:
         "200":
-          description: Block information, where the transaction is located.
+          description: xxx
           content:
-            application/json:
+            application/octet-stream:
               schema:
-                $ref: '#/components/schemas/FullBlockHeadersResponse'
-        "404":
-          description: Transaction not found.
+                type: string
+                format: binary
+  /btc/address/{address}/txIds:
+    get:
+      tags:
+        - bitcoin
+      operationId: getTxsForAddress
+      description: |
+        Retrieves the list of transaction ids associated with the given address
+      summary: Retrieves the list of transaction ids associated with the given address
+      responses:
+        "200":
+          description: xxx
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
   /btc/blocks/{blockHash}:
     get:
       tags:
         - bitcoin
-      operationId: getBlock
+      operationId: getBlockForBlockHash
       description: |
-        Get a block by Hash.
-      summary: Find the block by Hash
-      parameters:
-        - in: path
-          name: blockHash
-          required: true
-          schema:
-            type: string
+        Retrieve the block for the given blockHash
+      summary: Retrieve the block for the given blockHash
       responses:
         "200":
-          description: Block information.
+          description: xxx
           content:
-            application/json:
+            application/octet-stream:
               schema:
-                $ref: '#/components/schemas/BlockDto'
-        "404":
-          description: Block not found.
-  /btc/blocks/height:
+                type: string
+                format: binary
+  /btc/blocks/{blockHash}/txIds:
     get:
       tags:
         - bitcoin
-      operationId: getBlocksByHeight
+      operationId: getTxIdsForBlockHash
       description: |
-        List all blocks within startHeight and endHeight.
-      summary: List Blocks
-      parameters:
-        - in: query
-          name: startHeight
-          required: true
-          description: Start height
-          schema:
-            type: integer
-        - in: query
-          name: endHeight
-          required: true
-          description: End height
-          schema:
-            type: integer
+        Retrieve the list of transaction ids for the given blockHash
+      summary: Retrieve the list of transaction ids for the given blockHash
       responses:
         "200":
-          description: List all blocks within startHeight and endHeight.
+          description: xxx
           content:
-            application/json:
+            application/octet-stream:
               schema:
-                $ref: '#/components/schemas/BlockHeadersResponse'
-  /btc/blocks/time:
-    get:
-      tags:
-        - bitcoin
-      operationId: getBlocksByTime
-      description: |
-        List the next quantity blocks from startTime.
-      summary: List Blocks
-      parameters:
-        - in: query
-          name: startTime
-          required: true
-          schema:
-            type: integer
-        - in: query
-          name: quantity
-          required: true
-          schema:
-            type: integer
-      responses:
-        "200":
-          description: List the next quantity blocks from startTime.
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BlockHeadersResponse'
-
+                type: string
+                format: binary
 components:
   schemas:
-    CheckTransactionResponse:
-      type: object
-      required:
-        - reportingBlocks
-      properties:
-        reportingBlocks:
-          type: integer
-          description: Number of reporting blocks.
-    BlockDto:
-      type: object
-      required:
-        - blockBytes
-      properties:
-        blockBytes:
-          type: string
-          format: byte
-    FullBlockHeadersResponse:
-      allOf:
-        - $ref: '#/components/schemas/BlockHeaderDto'
-        - $ref:  '#/components/schemas/BlockDto'
-    BlockHeadersResponse:
-      type: object
-      required:
-        - blocks
-      properties:
-        blocks:
-          type: array
-          items:
-            $ref: '#/components/schemas/BlockHeaderDto'
-    BlockHeaderDto:
-      type: object
-      required:
-        - blockHash
-        - prevBlockHash
-        - height
-        - chainWork
-        - time
-        - txIds
-      properties:
-        blockHash:
-          type: string
-        prevBlockHash:
-          type: string
-        height:
-          type: integer
-        chainWork:
-          type: integer
-        time:
-          type: integer
-        txIds:
-          type: array
-          items:
-            type: string
-            description: Transaction Id
     TransactionDto:
       type: object
       required:
@@ -243,13 +136,3 @@ components:
         transactionBytes:
           type: string
           format: byte
-    TransactionsResponse:
-      type: object
-      required:
-        - txIds
-      properties:
-        txIds:
-          type: array
-          items:
-            type: string
-            description: Transaction Id
