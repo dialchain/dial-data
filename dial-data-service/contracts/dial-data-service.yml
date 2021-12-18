@@ -24,9 +24,13 @@ paths:
         required: true
         description: Transaction to be forwarded to the bitcoin network.
         content:
-          application/json:
+          multipart/mixed:
             schema:
-              $ref: '#/components/schemas/TransactionRequest'
+              type: object
+              properties:
+                txBytes:
+                  type: string
+                  format: binary
       responses:
         "202":
           description: Transaction successfully submitted.
@@ -156,13 +160,3 @@ paths:
               schema:
                 type: string
                 format: binary
-components:
-  schemas:
-    TransactionRequest:
-      type: object
-      required:
-        - transactionBytes
-      properties:
-        transactionBytes:
-          type: string
-          format: byte
