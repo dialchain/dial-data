@@ -101,7 +101,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/contracts/bitcoin-data-service.yml</inputSpec>
+                            <inputSpec>${project.basedir}/contracts/dial-data-service.yml</inputSpec>
                             <generatorName>spring</generatorName>
                             <generateApis>true</generateApis>
                             <generateApiTests>false</generateApiTests>

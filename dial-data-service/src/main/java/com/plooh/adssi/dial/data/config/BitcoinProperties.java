@@ -21,8 +21,14 @@ public class BitcoinProperties {
     @NotNull
     private Boolean localhost;
 
-    // fullStoreDepth – The number of blocks of history stored in full (something like 1000 is pretty safe)
-    private int fullStoreDepth = 1000;
+    @NotNull
+    private String fastCatchupTime;
+
+    @NotNull
+    private String blockstoreDir;
+
+    @NotNull
+    private String dialblockstoreDir;
 
     public NetworkParameters getParams(){
         // Figure out which network we should connect to.
