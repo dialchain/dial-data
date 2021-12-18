@@ -2,7 +2,6 @@ spring:
   application:
     name: dial-data
   datasource:
-    url: jdbc:postgresql://dial-data.clg6kxm72irr.us-east-1.rds.amazonaws.com:5432/dialDB
     username: user
     password: password
   jpa:
@@ -47,3 +46,5 @@ dial:
 logging:
   level:
     root: INFO
+
+spring.profiles.active: local
