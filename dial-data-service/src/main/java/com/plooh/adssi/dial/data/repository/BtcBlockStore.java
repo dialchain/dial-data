@@ -1,134 +1,152 @@
 package com.plooh.adssi.dial.data.repository;
 
-import com.plooh.adssi.dial.data.domain.*;
-import com.plooh.adssi.dial.data.exception.BlockNotFound;
-import com.plooh.adssi.dial.data.exception.TransactionNotFound;
+import java.nio.ByteBuffer;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import com.plooh.adssi.dial.data.domain.BtcAddressTx;
+import com.plooh.adssi.dial.data.domain.BtcBlockTxIds;
+import com.plooh.adssi.dial.data.domain.BtcBytesList;
+import com.plooh.adssi.dial.data.domain.Bytes;
+
+import org.bitcoinj.core.Address;
+import org.bitcoinj.core.Block;
+import org.bitcoinj.core.NetworkParameters;
+import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.StoredBlock;
+import org.bitcoinj.core.Transaction;
+import org.bitcoinj.core.TransactionInput;
+import org.bitcoinj.core.TransactionOutput;
+import org.bitcoinj.script.ScriptPattern;
+import org.bitcoinj.store.BlockStore;
+import org.bitcoinj.store.BlockStoreException;
+import org.springframework.stereotype.Component;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.bitcoinj.core.*;
-import org.bitcoinj.script.ScriptPattern;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Slf4j
 @RequiredArgsConstructor
-@Service
+@Component
 public class BtcBlockStore {
 
-    private final BtcTransactionRepository btcTransactionRepository;
-    private final BtcBlockHeaderRepository btcBlockHeaderRepository;
-    private final BtcBlockRepository btcBlockRepository;
-    private final BtcAddressRepository btcAddressRepository;
+    private final DialBtcBlockStore dialBtcBlockStore;
+    private final BlockStore blockStore;
 
-    @Transactional
-    public BtcTransaction save(BtcTransaction transaction) {
-        return btcTransactionRepository.save(transaction);
+    public Optional<byte[]> getChainhead() {
+        try {
+            return Optional.ofNullable(blockStore.getChainHead())
+                    .map(this::serializeStoredBlock);
+        } catch (BlockStoreException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
-    public BtcTransaction findByTxId(String transactionId) {
-        return btcTransactionRepository.findByTxId(transactionId)
-                .orElseThrow(() -> new TransactionNotFound(transactionId));
+    public Optional<byte[]> getBlockHeadersForBlockHash(byte[] blockHash) {
+        return readStoredBlock(blockHash)
+                .map(storedBlock -> serializeStoredBlock(storedBlock));
     }
 
-    public Optional<BtcBlockHeader> findBlockHeadersByTxId(String txId) {
-        return btcBlockHeaderRepository.findByTxId(txId);
+    public Optional<byte[]> getBlockHashForTxId(byte[] txId) {
+        return dialBtcBlockStore.get(txId);
+    }
+
+    public Optional<byte[]> getTxsForAddress(byte[] address) {
+        return dialBtcBlockStore.get(address);
+    }
+
+    public Optional<byte[]> getBlockForBlockHash(byte[] blockHash) {
+        return dialBtcBlockStore.get(blockHash);
+    }
+
+    public Optional<byte[]> getTxIdsForBlockHash(byte[] blockHash) {
+        return dialBtcBlockStore.get(blockHash)
+                .map(blockByte -> new Block(dialBtcBlockStore.getParams(), blockByte,
+                        dialBtcBlockStore.getParams().getDefaultSerializer(),
+                        blockByte.length))
+                .map(block -> new BtcBlockTxIds(getTxIds(block)))
+                .map(btcBlockTxIds -> btcBlockTxIds.toBytes());
+    }
+
+    private List<Sha256Hash> getTxIds(Block block) {
+        return block.getTransactions() == null ? Collections.emptyList()
+                : block.getTransactions().stream().map(tx -> tx.getTxId()).collect(Collectors.toList());
     }
 
     /**
-     * TODO Willis. We could add start annd count to this interface.
-     * For now i limited it to the first 100.
+     * Storing a block.
+     * - We store one entry for the block bytes.
+     * - We extract and map each address to the list of affected transactions/block
+     * - We store one entry for eachtransaction to refer to the hosting block
      * 
-     * @param address
-     * @return
+     * @param block
      */
-    public List<BtcAddress> getTransactionsByAddress(String address) {
-        return btcAddressRepository.findByAddress(address, PageRequest.of(0, 100));
-    }
-
-    public List<BtcBlockHeader> getBlocksByHeight(int startHeight, int endHeight) {
-        return btcBlockHeaderRepository.findByHeightBetween(startHeight, endHeight);
-    }
-
-    public List<BtcBlockHeader> getBlocksByTime(Integer startTime, Integer quantity) {
-        return btcBlockHeaderRepository.findByTimeGreaterThanEqual(startTime, PageRequest.of(0, quantity.intValue()));
-    }
-
-    public BtcBlock getBlockById(String blockId) {
-        return btcBlockRepository.findById(blockId)
-                .orElseThrow(() -> new BlockNotFound(blockId));
-    }
-
-    public BtcBlockHeader findOrCreateBtcBlock(Block block, Integer height, Integer chainWork) {
-        BtcBlockHeader btcBlockHeader = btcBlockHeaderRepository.findById(block.getHashAsString())
-                .orElseGet(() -> BtcBlockHeader.builder()
-                        .blockId(block.getHashAsString())
-                        .build());
-
-        btcBlockHeader.setTime(Math.toIntExact(block.getTimeSeconds()));
-
-        if (block.getPrevBlockHash() != null) {
-            btcBlockHeader.setPrevBlockHash(block.getPrevBlockHash().toString());
-        }
-        if (height != null) {
-            btcBlockHeader.setHeight(height);
-        }
-        if (chainWork != null) {
-            btcBlockHeader.setChainWork(chainWork);
-        }
-
+    public void storeBtcBlock(Block block) {
+        byte[] blockHashBytes = block.getHash().getBytes();
+        // Store the block bytes
+        dialBtcBlockStore.put(blockHashBytes, block.unsafeBitcoinSerialize());
         if (block.getTransactions() != null) {
-            btcBlockHeader.setTxIds(block.getTransactions().stream()
-                    .map(Transaction::getTxId)
-                    .map(Sha256Hash::toString)
-                    .collect(Collectors.toSet()));
-
-            handleTransactionInputs(block.getHashAsString(), block.getTransactions());
-            handleTransactionOutputs(block.getHashAsString(), block.getTransactions());
+            // Store the addresses frominput and output
+            handleTransactionInputs(block.getHash(), block.getTransactions());
+            handleTransactionOutputs(block.getHash(), block.getTransactions());
+            // Map each txId to the blockId
+            block.getTransactions().stream()
+                    .forEach(tx -> dialBtcBlockStore.put(tx.getTxId().getBytes(), blockHashBytes));
         }
-
-        btcBlockHeader = btcBlockHeaderRepository.save(btcBlockHeader);
-
-        findOrCreateBtcBlockPayload(block);
-        return btcBlockHeader;
     }
 
-    private void handleTransactionOutputs(final String blockHash, List<Transaction> transactions) {
+    private void handleTransactionOutputs(final Sha256Hash blockHash, final List<Transaction> transactions) {
         if (transactions == null) {
             return;
         }
-
         List<TransactionOutput> transactionOutputs = transactions.stream()
                 .map(Transaction::getOutputs)
                 .findAny()
                 .orElseGet(() -> List.of());
 
-        var btcAddresses = transactionOutputs.stream()
-                .map(txOutput -> {
-                    try {
-                        Address _toAddress = _toAddress(txOutput);
-                        if (_toAddress != null) {
-                            return BtcAddress.builder()
-                                    .address(_toAddress.toString())
-                                    .blockId(blockHash)
-                                    .txId(txOutput.getParentTransaction().getTxId().toString())
-                                    .input(false)
-                                    .build();
-                        }
-                    } catch (Exception e) {
-                        log.warn(e.getMessage(), e);
-                    }
-                    return null;
-                })
+        Map<Address, List<BtcAddressTx>> btcAddresses = transactionOutputs.stream()
+                .map(txOutput -> addressTx(txOutput, blockHash))
                 .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        if (!btcAddresses.isEmpty()) {
-            btcAddressRepository.saveAll(btcAddresses);
+                .collect(Collectors.groupingBy(BtcAddressTx::getAddress));
+
+        storeAddresses(btcAddresses);
+    }
+
+    private void storeAddresses(Map<Address, List<BtcAddressTx>> btcAddresses) {
+        Map<Address, BtcBytesList> btcAddressesBytes = btcAddresses.entrySet().stream()
+                .collect(Collectors.toMap(Entry::getKey, e -> toBtcBytesList(e.getValue())));
+
+        btcAddressesBytes.entrySet().forEach(e -> {
+            byte[] addressHash = e.getKey().getHash();
+            BtcBytesList newEntries = e.getValue();
+            BtcBytesList bl = dialBtcBlockStore.get(addressHash).map(b -> BtcBytesList.fromBytes(b).merge(newEntries))
+                    .orElseGet(() -> newEntries);
+            dialBtcBlockStore.put(addressHash, bl.sort().toBytes());
+        });
+    }
+
+    private BtcBytesList toBtcBytesList(List<BtcAddressTx> list) {
+        return BtcBytesList
+                .wrap(list.stream().map(BtcAddressTx::toBytes).map(b -> Bytes.wrap(b)).collect(Collectors.toList()));
+    }
+
+    private BtcAddressTx addressTx(TransactionOutput txOutput, final Sha256Hash blockHash) {
+        try {
+            Address _toAddress = _toAddress(txOutput);
+            if (_toAddress != null) {
+                return new BtcAddressTx(false, txOutput.getParentTransaction().getTxId(), blockHash,
+                        _toAddress);
+            }
+        } catch (Exception e) {
+            log.warn(e.getMessage(), e);
         }
+        return null;
+
     }
 
     private Address _toAddress(TransactionOutput output) {
@@ -142,7 +160,7 @@ public class BtcBlockStore {
         return toAddress;
     }
 
-    private void handleTransactionInputs(final String blockHash, List<Transaction> transactions) {
+    private void handleTransactionInputs(final Sha256Hash blockHash, List<Transaction> transactions) {
         if (transactions == null) {
             return;
         }
@@ -151,75 +169,64 @@ public class BtcBlockStore {
                 .map(Transaction::getInputs)
                 .findAny()
                 .orElseGet(() -> List.of());
-
-        var btcAddresses = transactionInputs.stream()
+        Map<Address, List<BtcAddressTx>> btcAddresses = transactionInputs.stream()
                 .filter(txInput -> !txInput.isCoinBase())
-                .map(txInput -> {
-                    try {
-                        Address address = findAddress(txInput);
-                        if (address != null) {
-                            var btcAddress = BtcAddress.builder()
-                                    .address(address.toString())
-                                    .blockId(blockHash)
-                                    .txId(txInput.getParentTransaction().getTxId().toString())
-                                    .input(true)
-                                    .build();
-                            return btcAddress;
-
-                        }
-                    } catch (Exception e) {
-                        log.trace(e.getMessage(), e);
-                    }
-                    return null;
-                })
+                .map(txInput -> findAddress(txInput).orElse(null))
                 .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-
-        if (!btcAddresses.isEmpty()) {
-            btcAddressRepository.saveAll(btcAddresses);
-        }
+                .collect(Collectors.groupingBy(BtcAddressTx::getAddress));
+        storeAddresses(btcAddresses);
     }
 
-    private Address findAddress(TransactionInput input) {
-        TransactionOutPoint outpoint = input.getOutpoint();
-        // final fromTxHash = outpoint.hash;
-        String outputTxId = outpoint.getHash().toString();
-        BtcBlockHeader blockHeadersByTxId = findBlockHeadersByTxId(outputTxId).orElse(null);
-        TransactionOutput relevantOutput = null;
-        if (blockHeadersByTxId != null) {
-            BtcBlock blockById = getBlockById(blockHeadersByTxId.getBlockId());
-            Block block = new Block(input.getParams(), blockById.getBlockBytes(),
-                    input.getParams().getDefaultSerializer(), 0);
-            Transaction fromTx = block.getTransactions().stream()
-                    .filter(tx -> tx.getTxId().toString().equals(outputTxId)).findFirst().orElse(null);
-            List<TransactionOutput> relevantOutputs = fromTx.getOutputs();
-            for (TransactionOutput ro : relevantOutputs) {
-                try {
-                    input.verify(ro);
-                    relevantOutput = ro;
-                    break;
-                } catch (Exception e) {
-                    // ignore.
-                }
+    private Optional<BtcAddressTx> findAddress(TransactionInput input) {
+        return getBlockHashForTxId(input.getOutpoint().getHash().getBytes())
+                .map(h -> relevantOutput(Sha256Hash.wrap(h), input)).get();
+    }
+
+    private Optional<BtcAddressTx> relevantOutput(Sha256Hash blockHash, TransactionInput input) {
+        return dialBtcBlockStore.get(blockHash.getBytes())
+                .map(b -> new Block(dialBtcBlockStore.getParams(), b,
+                        dialBtcBlockStore.getParams().getDefaultSerializer(),
+                        b.length))
+                .map(block -> matchingTx(block, input.getOutpoint().getHash()).orElse(null))
+                .map(fromTx -> findRelevantOutput(fromTx, input).orElse(null))
+                .map(out -> new BtcAddressTx(true, input.getOutpoint().getHash(),
+                        blockHash, _toAddress(out)));
+    }
+
+    private Optional<TransactionOutput> findRelevantOutput(Transaction fromTx, TransactionInput input) {
+        List<TransactionOutput> relevantOutputs = fromTx.getOutputs();
+        for (TransactionOutput ro : relevantOutputs) {
+            try {
+                input.verify(ro);
+                return Optional.of(ro);
+            } catch (Exception e) {
+                // ignore.
             }
         }
-        if (relevantOutput != null) {
-            return _toAddress(relevantOutput);
-        }
-        return null;
+        return Optional.empty();
     }
 
-    private void findOrCreateBtcBlockPayload(Block block) {
-        if (block.getTransactions() == null) {
-            return;
-        }
+    private Optional<Transaction> matchingTx(Block block, Sha256Hash txId) {
+        return block.getTransactions() == null ? Optional.empty()
+                : block.getTransactions().stream().filter(tx -> tx.getTxId().equals(txId)).findAny();
+    }
 
-        BtcBlock btcB = btcBlockRepository.findById(block.getHashAsString())
-                .orElseGet(() -> BtcBlock.builder()
-                        .blockId(block.getHashAsString())
-                        .build());
-        btcB.setBlockBytes(block.unsafeBitcoinSerialize());
-        btcBlockRepository.save(btcB);
+    private Optional<StoredBlock> readStoredBlock(byte[] bockHash) {
+        try {
+            return Optional.ofNullable(blockStore.get(Sha256Hash.wrap(bockHash)));
+        } catch (BlockStoreException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+
+    private byte[] serializeStoredBlock(StoredBlock storedBlock) {
+        ByteBuffer buffer = ByteBuffer.allocate(StoredBlock.COMPACT_SERIALIZED_SIZE);
+        storedBlock.serializeCompact(buffer);
+        return buffer.array();
+    }
+
+    public NetworkParameters getParams() {
+        return dialBtcBlockStore.getParams();
     }
 
 }

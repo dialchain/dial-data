@@ -3,11 +3,10 @@ package com.plooh.adssi.dial.data.config;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.time.Instant;
-import java.util.Date;
-import java.util.Optional;
 
-import com.plooh.adssi.dial.data.service.BtcBlockService;
+import com.plooh.adssi.dial.data.repository.BtcBlockStore;
 
+import org.apache.commons.lang3.StringUtils;
 import org.bitcoinj.core.BlockChain;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.PeerAddress;
@@ -30,7 +29,7 @@ public class BitcoinSPVProvider {
 
     private final BitcoinProperties bitcoinProperties;
     private final BlockStore blockStore;
-    private final BtcBlockService btcBlockService;
+    private final BtcBlockStore btcBlockStore;
 
     @Bean
     @Primary
@@ -39,8 +38,15 @@ public class BitcoinSPVProvider {
         final NetworkParameters params = bitcoinProperties.getParams();
         BlockChain chain = new BlockChain(params, blockStore);
         PeerGroup peerGroup = new PeerGroup(params, chain);
-        Instant instant = Instant.parse("2021-12-15T00:00:00.00Z");
-        peerGroup.setFastCatchupTimeSecs(instant.toEpochMilli() / 1000);
+
+        if (StringUtils.isNotBlank(bitcoinProperties.getFastCatchupTime())){
+            try {
+                Instant instant = Instant.parse(bitcoinProperties.getFastCatchupTime());
+                peerGroup.setFastCatchupTimeSecs(instant.toEpochMilli() / 1000);
+            } catch (Exception e){
+                log.warn(String.format("FastCatchupTime property [%s] not properly configured. Please check...", bitcoinProperties.getFastCatchupTime()), e);
+            }
+        }
 
         if (bitcoinProperties.getLocalhost()) {
             peerGroup.addAddress(new PeerAddress(params, InetAddress.getLocalHost()));
@@ -49,15 +55,8 @@ public class BitcoinSPVProvider {
         }
 
         peerGroup.addBlocksDownloadedEventListener(Threading.USER_THREAD, (peer, block, filteredBlock, blocksLeft) -> {
-            Optional.ofNullable(block.getTransactions()).ifPresent(txs -> {
-                txs.forEach(tx -> btcBlockService.findOrCreateBtcTransaction(tx, block.getHash().toString()));
-            });
-            btcBlockService.findOrCreateBtcBlock(block, null, null);
+            btcBlockStore.storeBtcBlock(block);
         });
-
-        chain.addNewBestBlockListener(Threading.USER_THREAD,
-                block -> btcBlockService.findOrCreateBtcBlock(block.getHeader(), block.getHeight(),
-                        block.getChainWork().intValue()));
 
         return peerGroup;
     }

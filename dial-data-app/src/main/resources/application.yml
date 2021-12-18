@@ -1,16 +1,6 @@
 spring:
   application:
     name: dial-data
-  datasource:
-    username: user
-    password: password
-  jpa:
-    open-in-view: false
-    hibernate:
-      ddl-auto: update
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
 
 server:
   error:
@@ -42,9 +32,10 @@ dial:
     bitcoin:
       network: testnet # Available options: testnet, regtest, main
       localhost: false
+      fastCatchupTime: "2021-12-15T00:00:00.00Z"
+      blockstoreDir: "${HOME}/.bitcoinj/blockstore"
+      dialblockstoreDir: "${HOME}/.bitcoinj/dialblockstore"
 
 logging:
   level:
     root: INFO
-
-spring.profiles.active: local
