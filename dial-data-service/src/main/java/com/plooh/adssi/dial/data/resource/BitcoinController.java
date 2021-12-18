@@ -3,7 +3,6 @@ package com.plooh.adssi.dial.data.resource;
 import java.io.IOException;
 
 import com.plooh.adssi.dial.data.bitcoin.BitcoinApi;
-import com.plooh.adssi.dial.data.bitcoin.model.BtcTransactionRequest;
 import com.plooh.adssi.dial.data.exception.AddressNotFound;
 import com.plooh.adssi.dial.data.exception.BlockNotFound;
 import com.plooh.adssi.dial.data.exception.NotChainHead;
@@ -19,6 +18,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
 import lombok.AllArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,9 +32,13 @@ public class BitcoinController implements BitcoinApi {
     private final PeerGroupService peerGroupService;
 
     @Override
-    public ResponseEntity<Void> broadcastTransaction(BtcTransactionRequest btcTransactionRequest) {
-        peerGroupService.broadcastTransaction(btcTransactionRequest);
-        return ResponseEntity.accepted().build();
+    public ResponseEntity<Void> broadcastTransaction(MultipartFile txBytes) {
+        try {
+            peerGroupService.broadcastTransaction(txBytes.getBytes());
+            return ResponseEntity.accepted().build();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
