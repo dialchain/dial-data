@@ -1,9 +1,7 @@
 package com.plooh.adssi.dial.data.repository;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -27,9 +25,7 @@ import org.bitcoinj.core.TransactionOutput;
 import org.bitcoinj.script.ScriptPattern;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
-import org.checkerframework.checker.units.qual.C;
 import org.springframework.stereotype.Component;
-import org.springframework.stereotype.Service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

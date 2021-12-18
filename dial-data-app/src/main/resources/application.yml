@@ -32,6 +32,9 @@ dial:
     bitcoin:
       network: testnet # Available options: testnet, regtest, main
       localhost: false
+      fastCatchupTime: "2021-12-15T00:00:00.00Z"
+      blockstoreDir: "${HOME}/.bitcoinj/blockstore"
+      dialblockstoreDir: "${HOME}/.bitcoinj/dialblockstore"
 
 logging:
   level:
