@@ -32,3 +32,8 @@ jobs:
         run: ./mvnw clean package
         env:
           MAVEN_OPTS: "-Dhttp.keepAlive=false -Dmaven.wagon.http.pool=false -Dmaven.wagon.httpconnectionManager.ttlSeconds=120" # Github-on-Azure tweaks - https://github.com/actions/virtual-environments/issues/1499
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: jar-artifact
+          path: dial-data-app
