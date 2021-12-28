@@ -12,9 +12,9 @@
 
     <dependencies>
         <dependency>
-            <groupId>com.plooh.adssi</groupId>
-            <artifactId>twindow-did</artifactId>
-            <version>0.0.1</version>
+            <groupId>org.bitcoinj</groupId>
+            <artifactId>bitcoinj-core</artifactId>
+            <version>${bitcoinj-core.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
@@ -45,12 +45,6 @@
             <artifactId>leveldbjni-all</artifactId>
             <scope>compile</scope>
         </dependency>
-        <!--
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-        </dependency>
-        -->
 
         <dependency>
             <groupId>io.swagger</groupId>
