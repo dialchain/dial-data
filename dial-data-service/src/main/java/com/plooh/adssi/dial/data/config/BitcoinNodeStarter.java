@@ -21,11 +21,9 @@ public class BitcoinNodeStarter {
         // Starts the PeerGroup and begins network activity.
         peerGroup.start();
 
-        // TODO: WILLIE Refactore me
-        CompletableFuture.supplyAsync(() -> {
+        CompletableFuture.runAsync(() -> {
             peerGroup.downloadBlockChain();
-            log.info("=== Download BlockChain completed. ===");
-            return null;
+            log.info("=== Download BlockChain completed... ===");
         });
     }
 

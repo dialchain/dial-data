@@ -2,9 +2,6 @@ spring:
   application:
     name: dial-data
 
-#  profiles:
-#    include: postgres
-
 server:
   error:
     include-message: always
@@ -20,6 +17,9 @@ management:
     web:
       exposure:
         include: health
+  health:
+    db:
+      enabled: true
 
 dial:
   data:
@@ -32,7 +32,9 @@ dial:
     bitcoin:
       network: testnet # Available options: testnet, regtest, main
       localhost: false
-      blockstore: memory # Available options: memory, Postgres
+      fastCatchupTime: "2021-12-15T00:00:00.00Z"
+      blockstoreDir: "${HOME}/.bitcoinj/blockstore"
+      dialblockstoreDir: "${HOME}/.bitcoinj/dialblockstore"
 
 logging:
   level:

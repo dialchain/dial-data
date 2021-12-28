@@ -1,0 +1,162 @@
+openapi: 3.0.3
+info:
+  title: Bitcoin Data Service
+  description: Allows bitcoin SPV (Simple Payment Verification) Clients to have a stateless access to the bitcoin network. A bitcoin data service will be designed such as to optimize the anonymity of SPV clients.
+  version: 1.0.0
+tags:
+  - name: bitcoin
+    description: Access to the bitcoin network for SPV-Clients
+servers:
+  - url: https://localhost:9092/
+    description: Local
+  - url: https://dial-data.mon-wallet.com/
+    description: Integration sa S
+paths:
+  /btc/transactions:
+    post:
+      tags:
+        - bitcoin
+      operationId: broadcastTransaction
+      description: |
+        Relay transactions produced by the SPV client to the bitcoin network.
+      summary: Broadcast a transaction to the bitcoin network
+      requestBody:
+        required: true
+        description: Transaction to be forwarded to the bitcoin network.
+        content:
+          multipart/mixed:
+            schema:
+              type: object
+              properties:
+                txBytes:
+                  type: string
+                  format: binary
+      responses:
+        "202":
+          description: Transaction successfully submitted.
+  /btc/blocks/chainhead:
+    get:
+      tags:
+        - bitcoin
+      operationId: getChainhead
+      description: |
+        Return the header of the latest block in the best chain
+      summary: Return the header of the latest block in the best chain
+      responses:
+        "200":
+          description: xxx
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /btc/blocks/{blockHash}/txIds:
+    get:
+      tags:
+        - bitcoin
+      operationId: getTxIdsForBlockHash
+      description: |
+        Retrieve the list of transaction ids for the given blockHash
+      summary: Retrieve the list of transaction ids for the given blockHash
+      parameters:    
+        - in: path    
+          name: blockHash    
+          required: true    
+          schema:               
+            type: string      
+      responses:
+        "200":
+          description: xxx2
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /btc/blocks/{blockHash}/header:
+    get:
+      tags:
+        - bitcoin
+      operationId: getBlockHeadersForBlockHash
+      description: |
+        Retrieve the block header for the given blockHash
+      summary: Retrieve the block header for the given blockHash
+      parameters:    
+        - in: path    
+          name: blockHash    
+          required: true    
+          schema:               
+            type: string      
+      responses:
+        "200":
+          description: xxx
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /btc/txs/{txId}/blockHash:
+    get:
+      tags:
+        - bitcoin
+      operationId: getBlockHashForTxId
+      description: |
+        Retrieves the blockHash for the given transaction
+      summary: Retrieves the blockHash for the given transaction
+      parameters:    
+        - in: path    
+          name: txId    
+          required: true    
+          schema:               
+            type: string      
+      responses:
+        "200":
+          description: xxx
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /btc/address/{address}/txIds:
+    get:
+      tags:
+        - bitcoin
+      operationId: getTxsForAddress
+      description: |
+        Retrieves the list of transaction ids associated with the given address
+      summary: Retrieves the list of transaction ids associated with the given address
+      parameters:    
+        - in: path    
+          name: address    
+          required: true    
+          schema:               
+            type: string      
+      responses:
+        "200":
+          description: xxx
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+  /btc/blocks/{blockHash}:
+    get:
+      tags:
+        - bitcoin
+      operationId: getBlockForBlockHash
+      description: |
+        Retrieve the block for the given blockHash
+      summary: Retrieve the block for the given blockHash
+      parameters:    
+        - in: path    
+          name: blockHash    
+          required: true    
+          schema:               
+            type: string      
+      responses:
+        "200":
+          description: xxx
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary

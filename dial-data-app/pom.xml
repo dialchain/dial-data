@@ -41,7 +41,11 @@
 			<artifactId>commons-lang3</artifactId>
 		</dependency>
 
-		<!-- Testing dependencies -->
+        <dependency>
+            <groupId>org.fusesource.leveldbjni</groupId>
+            <artifactId>leveldbjni-all</artifactId>
+        </dependency>
+    <!-- Testing dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
