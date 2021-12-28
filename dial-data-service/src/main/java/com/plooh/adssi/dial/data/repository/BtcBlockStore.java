@@ -170,7 +170,7 @@ public class BtcBlockStore {
     private Optional<BtcAddressTx> findAddress(TransactionInput input) {
         // input.getOutpoint().getHash() := hash of the old transaction that supplied the input with money
         return getBlockHashForTxId(input.getOutpoint().getHash().getBytes())
-                .map(h -> relevantOutput(Sha256Hash.wrap(h), input)).get();
+                .flatMap(h -> relevantOutput(Sha256Hash.wrap(h), input));
     }
 
     private Optional<BtcAddressTx> relevantOutput(Sha256Hash blockHash, TransactionInput input) {
