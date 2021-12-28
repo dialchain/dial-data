@@ -37,6 +37,7 @@ jobs:
         with:
           name: data-artifact
           path: dial-data-app
+          retention-days: 5
 
   build-and-push-to-aws:
     needs: [build]
