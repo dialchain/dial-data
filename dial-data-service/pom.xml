@@ -5,6 +5,7 @@
         <groupId>com.plooh.adssi</groupId>
         <artifactId>dial-data-java</artifactId>
         <version>0.0.1-SNAPSHOT</version>
+        <relativePath>../</relativePath>
     </parent>
     <artifactId>dial-data-service</artifactId>
     <name>dial-data-service</name>
@@ -29,6 +30,12 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+            <exclusions>
+                <exclusion>
+                  <groupId>org.springframework.boot</groupId>
+                  <artifactId>spring-boot-starter-logging</artifactId>
+                </exclusion>
+              </exclusions>            
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
