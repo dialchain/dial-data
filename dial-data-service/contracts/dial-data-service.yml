@@ -12,28 +12,25 @@ servers:
   - url: https://dial-data.mon-wallet.com/
     description: Integration sa S
 paths:
-  /btc/transactions:
-    post:
-      tags:
-        - bitcoin
-      operationId: broadcastTransaction
-      description: |
-        Relay transactions produced by the SPV client to the bitcoin network.
-      summary: Broadcast a transaction to the bitcoin network
-      requestBody:
-        required: true
-        description: Transaction to be forwarded to the bitcoin network.
-        content:
-          multipart/mixed:
-            schema:
-              type: object
-              properties:
-                txBytes:
-                  type: string
-                  format: binary
-      responses:
-        "202":
-          description: Transaction successfully submitted.
+  # /btc/transactions2:
+  #   post:
+  #     tags:
+  #       - bitcoin
+  #     operationId: broadcastTransaction2
+  #     description: |
+  #       Relay transactions produced by the SPV client to the bitcoin network.
+  #     summary: Broadcast a transaction to the bitcoin network
+  #     requestBody:
+  #       required: true
+  #       description: Transaction to be forwarded to the bitcoin network.
+  #       content:
+  #         multipart/octet-stream:
+  #           schema:
+  #             type: string
+  #             format: binary
+  #     responses:
+  #       "202":
+  #         description: Transaction successfully submitted.
   /btc/blocks/chainhead:
     get:
       tags:
