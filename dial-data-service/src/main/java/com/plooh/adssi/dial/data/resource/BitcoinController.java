@@ -119,7 +119,7 @@ public class BitcoinController implements BitcoinApi {
     public ResponseEntity<Resource> getTxsForAddress(String address) {
 
         var response = btcBlockStore
-                .getTxsForAddress(Address.fromString(btcBlockStore.getParams(), address).getHash())
+                .getTxsForAddress(Address.fromString(btcBlockStore.getParams(), address))
                 .orElseThrow(() -> new AddressNotFound(address));
         return res(response, address + ".txIds.dat");
     }

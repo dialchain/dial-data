@@ -27,6 +27,8 @@ public class BtcBlockStore {
     private final DialBtcBlockStore dialBtcBlockStore;
     private final BlockStore blockStore;
 
+    private final Map<String, BtcBytesList> memPool = new HashMap<>();
+
     public Optional<byte[]> getChainhead() {
         try {
             return Optional.ofNullable(blockStore.getChainHead())
@@ -45,8 +47,19 @@ public class BtcBlockStore {
         return dialBtcBlockStore.get(txId);
     }
 
-    public Optional<byte[]> getTxsForAddress(byte[] address) {
-        return dialBtcBlockStore.get(address);
+    public Optional<byte[]> getTxsForAddress(Address address) {
+        Optional<byte[]> bytes = dialBtcBlockStore.get(address.getHash());
+
+        var memPoolBtcBytesList = Optional.ofNullable(memPool.get(address.toString()));
+
+        if (!memPoolBtcBytesList.isPresent()){
+            return bytes;
+        }
+        if (bytes.isEmpty()){
+            return Optional.of(memPoolBtcBytesList.get().toBytes());
+        }
+
+        return Optional.of(memPoolBtcBytesList.get().merge(BtcBytesList.fromBytes(bytes.get())).toBytes());
     }
 
     public Optional<byte[]> getBlockForBlockHash(byte[] blockHash) {
@@ -104,19 +117,27 @@ public class BtcBlockStore {
                 .filter(Objects::nonNull)
                 .collect(Collectors.groupingBy(BtcAddressTx::getAddress));
 
-        storeAddresses(btcAddresses);
+        storeAddresses(btcAddresses, blockHash == null);
     }
 
-    private void storeAddresses(Map<Address, List<BtcAddressTx>> btcAddresses) {
+    private void storeAddresses(Map<Address, List<BtcAddressTx>> btcAddresses, boolean inMemory) {
         Map<Address, BtcBytesList> btcAddressesBytes = btcAddresses.entrySet().stream()
                 .collect(Collectors.toMap(Entry::getKey, e -> toBtcBytesList(e.getValue())));
 
         btcAddressesBytes.entrySet().forEach(e -> {
-            byte[] addressHash = e.getKey().getHash();
             BtcBytesList newEntries = e.getValue();
-            BtcBytesList bl = dialBtcBlockStore.get(addressHash).map(b -> BtcBytesList.fromBytes(b).merge(newEntries))
+
+            if (!inMemory){
+                byte[] addressHash = e.getKey().getHash();
+                BtcBytesList bl = dialBtcBlockStore.get(addressHash).map(b -> BtcBytesList.fromBytes(b).merge(newEntries))
                     .orElseGet(() -> newEntries);
-            dialBtcBlockStore.put(addressHash, bl.sort().toBytes());
+                dialBtcBlockStore.put(addressHash, bl.sort().toBytes());
+            } else {
+                var addressString = e.getKey().toString();
+                BtcBytesList bl = Optional.ofNullable(memPool.get(addressString)).map(b -> b.merge(newEntries))
+                    .orElseGet(() -> newEntries);
+                memPool.put(addressString, bl.sort());
+            }
         });
     }
 
@@ -164,7 +185,8 @@ public class BtcBlockStore {
                 .map(txInput -> findAddress(txInput).orElse(null))
                 .filter(Objects::nonNull)
                 .collect(Collectors.groupingBy(BtcAddressTx::getAddress));
-        storeAddresses(btcAddresses);
+
+        storeAddresses(btcAddresses, blockHash == null);
     }
 
     private Optional<BtcAddressTx> findAddress(TransactionInput input) {
@@ -219,5 +241,13 @@ public class BtcBlockStore {
     public NetworkParameters getParams() {
         return dialBtcBlockStore.getParams();
     }
+
+    public void storeTransaction(Transaction transaction) {
+
+        // Store the addresses frominput and output
+        handleTransactionInputs(null, List.of(transaction));
+        handleTransactionOutputs(null, List.of(transaction));
+    }
+
 
 }

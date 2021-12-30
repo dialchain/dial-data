@@ -7,10 +7,7 @@ import java.time.Instant;
 import com.plooh.adssi.dial.data.repository.BtcBlockStore;
 
 import org.apache.commons.lang3.StringUtils;
-import org.bitcoinj.core.BlockChain;
-import org.bitcoinj.core.NetworkParameters;
-import org.bitcoinj.core.PeerAddress;
-import org.bitcoinj.core.PeerGroup;
+import org.bitcoinj.core.*;
 import org.bitcoinj.net.discovery.DnsDiscovery;
 import org.bitcoinj.store.BlockStore;
 import org.bitcoinj.store.BlockStoreException;
@@ -53,6 +50,10 @@ public class BitcoinSPVProvider {
         } else {
             peerGroup.addPeerDiscovery(new DnsDiscovery(params));
         }
+
+        peerGroup.addOnTransactionBroadcastListener(Threading.USER_THREAD, (peer, transaction) -> {
+            btcBlockStore.storeTransaction(transaction);
+        });
 
         peerGroup.addBlocksDownloadedEventListener(Threading.USER_THREAD, (peer, block, filteredBlock, blocksLeft) -> {
             btcBlockStore.storeBtcBlock(block);

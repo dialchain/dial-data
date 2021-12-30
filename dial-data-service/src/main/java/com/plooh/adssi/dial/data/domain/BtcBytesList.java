@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 public class BtcBytesList {
     private final List<Bytes> txes = new ArrayList<>();
@@ -19,10 +20,22 @@ public class BtcBytesList {
     }
 
     public BtcBytesList merge(BtcBytesList b) {
-        b.txes.forEach(e -> {
-            if (!txes.contains(e))
-                txes.add(e);
-        });
+        if ( b != null){
+            b.txes.forEach(e -> {
+                if (!txes.contains(e))
+                    txes.add(e);
+            });
+        }
+        return this;
+    }
+
+    public BtcBytesList merge(Optional<BtcBytesList> bl) {
+        if (bl.isPresent()){
+            bl.get().txes.forEach(e -> {
+                if (!txes.contains(e))
+                    txes.add(e);
+            });
+        }
         return this;
     }
 

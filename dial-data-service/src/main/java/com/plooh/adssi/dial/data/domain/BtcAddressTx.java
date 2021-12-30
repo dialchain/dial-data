@@ -21,7 +21,7 @@ public class BtcAddressTx {
     public BtcAddressTx(boolean input, Sha256Hash txId, Sha256Hash blockId, Address address) {
         this.input = input;
         this.txId = txId;
-        this.blockId = blockId;
+        this.blockId = blockId != null ? blockId : Sha256Hash.ZERO_HASH;
         this.address = address;
     }
 
