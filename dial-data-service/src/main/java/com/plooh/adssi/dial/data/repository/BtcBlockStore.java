@@ -4,6 +4,7 @@ import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.plooh.adssi.dial.data.domain.BtcAddressTx;
 import com.plooh.adssi.dial.data.domain.BtcBlockTxIds;
@@ -52,10 +53,10 @@ public class BtcBlockStore {
 
         var memPoolBtcBytesList = Optional.ofNullable(memPool.get(address.toString()));
 
-        if (!memPoolBtcBytesList.isPresent()){
+        if (!memPoolBtcBytesList.isPresent()) {
             return bytes;
         }
-        if (bytes.isEmpty()){
+        if (bytes.isEmpty()) {
             return Optional.of(memPoolBtcBytesList.get().toBytes());
         }
 
@@ -95,7 +96,7 @@ public class BtcBlockStore {
         if (block.getTransactions() != null) {
             // Map each txId to the blockId
             block.getTransactions().stream()
-                .forEach(tx -> dialBtcBlockStore.put(tx.getTxId().getBytes(), blockHashBytes));
+                    .forEach(tx -> dialBtcBlockStore.put(tx.getTxId().getBytes(), blockHashBytes));
 
             // Store the addresses frominput and output
             handleTransactionInputs(block.getHash(), block.getTransactions());
@@ -111,11 +112,11 @@ public class BtcBlockStore {
                 .map(Transaction::getOutputs)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
-
-        Map<Address, List<BtcAddressTx>> btcAddresses = transactionOutputs.stream()
+        List<BtcAddressTx> collected = transactionOutputs.stream()
                 .map(txOutput -> addressTx(txOutput, blockHash))
-                .filter(Objects::nonNull)
-                .collect(Collectors.groupingBy(BtcAddressTx::getAddress));
+                .filter(Objects::nonNull).collect(Collectors.toList());
+
+        Map<Address, List<BtcAddressTx>> btcAddresses = toMap(collected);
 
         storeAddresses(btcAddresses, blockHash == null);
     }
@@ -127,15 +128,16 @@ public class BtcBlockStore {
         btcAddressesBytes.entrySet().forEach(e -> {
             BtcBytesList newEntries = e.getValue();
 
-            if (!inMemory){
+            if (!inMemory) {
                 byte[] addressHash = e.getKey().getHash();
-                BtcBytesList bl = dialBtcBlockStore.get(addressHash).map(b -> BtcBytesList.fromBytes(b).merge(newEntries))
-                    .orElseGet(() -> newEntries);
+                BtcBytesList bl = dialBtcBlockStore.get(addressHash)
+                        .map(b -> BtcBytesList.fromBytes(b).merge(newEntries))
+                        .orElseGet(() -> newEntries);
                 dialBtcBlockStore.put(addressHash, bl.sort().toBytes());
             } else {
                 var addressString = e.getKey().toString();
                 BtcBytesList bl = Optional.ofNullable(memPool.get(addressString)).map(b -> b.merge(newEntries))
-                    .orElseGet(() -> newEntries);
+                        .orElseGet(() -> newEntries);
                 memPool.put(addressString, bl.sort());
             }
         });
@@ -175,22 +177,34 @@ public class BtcBlockStore {
         if (transactions == null) {
             return;
         }
-
         List<TransactionInput> transactionInputs = transactions.stream()
                 .map(Transaction::getInputs)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
-        Map<Address, List<BtcAddressTx>> btcAddresses = transactionInputs.stream()
+        List<BtcAddressTx> collected = transactionInputs.stream()
                 .filter(txInput -> !txInput.isCoinBase())
                 .map(txInput -> findAddress(txInput).orElse(null))
-                .filter(Objects::nonNull)
-                .collect(Collectors.groupingBy(BtcAddressTx::getAddress));
+                .filter(Objects::nonNull).collect(Collectors.toList());
+
+        Map<Address, List<BtcAddressTx>> btcAddresses = toMap(collected);
 
         storeAddresses(btcAddresses, blockHash == null);
     }
 
+    private Map<Address, List<BtcAddressTx>> toMap(List<BtcAddressTx> collected) {
+        Map<Address, List<BtcAddressTx>> btcAddresses = new HashMap<>();
+        collected.forEach(btcTx -> {
+            if (!btcAddresses.containsKey(btcTx.getAddress())) {
+                btcAddresses.put(btcTx.getAddress(), new ArrayList<BtcAddressTx>());
+            }
+            btcAddresses.get(btcTx.getAddress()).add(btcTx);
+        });
+        return btcAddresses;
+    }
+
     private Optional<BtcAddressTx> findAddress(TransactionInput input) {
-        // input.getOutpoint().getHash() := hash of the old transaction that supplied the input with money
+        // input.getOutpoint().getHash() := hash of the old transaction that supplied
+        // the input with money
         return getBlockHashForTxId(input.getOutpoint().getHash().getBytes())
                 .flatMap(h -> relevantOutput(Sha256Hash.wrap(h), input));
     }
@@ -248,6 +262,5 @@ public class BtcBlockStore {
         handleTransactionInputs(null, List.of(transaction));
         handleTransactionOutputs(null, List.of(transaction));
     }
-
 
 }
