@@ -7,10 +7,15 @@ import org.bitcoinj.core.LegacyAddress;
 import org.bitcoinj.core.NetworkParameters;
 import org.bitcoinj.core.SegwitAddress;
 import org.bitcoinj.core.Sha256Hash;
+import org.bitcoinj.core.Transaction;
 
 public class BtcAddressTx {
-
-    private final boolean input;
+    /// Can be used to map following version information
+    /// 0 -> 00 Output fix length, no tx info
+    /// 1 -> 01 Input fix length, no tx info
+    /// 2 -> 10 Output variable length, with tx info
+    /// 3 -> 11 Input variable length, with tx info
+    private final int version;
 
     private final Sha256Hash txId;
 
@@ -18,14 +23,63 @@ public class BtcAddressTx {
 
     private final Address address;
 
-    public BtcAddressTx(boolean input, Sha256Hash txId, Sha256Hash blockId, Address address) {
-        this.input = input;
+    private final Transaction tx;
+
+    public BtcAddressTx(int version, Sha256Hash txId, Sha256Hash blockId, Address address, Transaction tx) {
+        this.version = version;
         this.txId = txId;
         this.blockId = blockId != null ? blockId : Sha256Hash.ZERO_HASH;
         this.address = address;
+        this.tx = tx;
     }
 
+    static final int legacy_btc_addr_length = 1 + Sha256Hash.LENGTH + Sha256Hash.LENGTH + LegacyAddress.LENGTH;
+    static final int legacy_btc_segwith_length = 1 + Sha256Hash.LENGTH + Sha256Hash.LENGTH
+            + SegwitAddress.WITNESS_PROGRAM_LENGTH_PKH;
+
     public static BtcAddressTx fromBytes(NetworkParameters params, byte[] b) {
+        if (b.length == legacy_btc_addr_length || b.length == legacy_btc_segwith_length) {
+            return fromBytesV0(params, b);
+        }
+
+        ByteBuffer buffer = ByteBuffer.wrap(b);
+        int version = buffer.getInt();
+        int txIdLength = buffer.getInt();
+        byte[] txId = null;
+        if (txIdLength > 0) {
+            txId = new byte[txIdLength];
+            buffer.get(txId);
+        }
+        int blockIdLength = buffer.getInt();
+        byte[] blockId = null;
+        if (blockIdLength > 0) {
+            blockId = new byte[blockIdLength];
+            buffer.get(blockId);
+        }
+        int addrLength = buffer.getInt();
+        Address address = null;
+        if (addrLength > 0) {
+            byte[] addressBytes = new byte[addrLength];
+            buffer.get(addressBytes);
+            if (addressBytes.length == LegacyAddress.LENGTH) {
+                address = LegacyAddress.fromScriptHash(params, addressBytes);
+            } else if (addressBytes.length == SegwitAddress.WITNESS_PROGRAM_LENGTH_PKH) {
+                address = SegwitAddress.fromHash(params, addressBytes);
+            }
+        }
+        int txLength = buffer.getInt();
+        Transaction tx = null;
+        if (txLength > 0) {
+            byte[] txBytes = new byte[txLength];
+            buffer.get(txBytes);
+            tx = new Transaction(params, txBytes, 0);
+        }
+        return new BtcAddressTx(version, txId == null ? null : Sha256Hash.wrap(txId),
+                blockId == null ? null : Sha256Hash.wrap(blockId), address,
+                tx);
+    }
+
+    public static BtcAddressTx fromBytesV0(NetworkParameters params, byte[] b) {
         ByteBuffer buffer = ByteBuffer.wrap(b);
         byte input = buffer.get(0);
         int offset = 1;
@@ -43,7 +97,7 @@ public class BtcAddressTx {
         } else if (addressBytes.length == SegwitAddress.WITNESS_PROGRAM_LENGTH_PKH) {
             address = SegwitAddress.fromHash(params, addressBytes);
         }
-        return new BtcAddressTx(input != 0, Sha256Hash.wrap(txId), Sha256Hash.wrap(blockId), address);
+        return new BtcAddressTx(input, Sha256Hash.wrap(txId), Sha256Hash.wrap(blockId), address, null);
     }
 
     public byte[] toBytes() {
