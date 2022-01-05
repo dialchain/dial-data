@@ -100,11 +100,12 @@ public class BtcAddressTx {
         return new BtcAddressTx(input, Sha256Hash.wrap(txId), Sha256Hash.wrap(blockId), address, null);
     }
 
+    // TODO Willyimplement V1 serialization
     public byte[] toBytes() {
         byte[] addressBytes = address.getHash();
         int capacity = 1 + Sha256Hash.LENGTH + Sha256Hash.LENGTH + addressBytes.length;
         ByteBuffer buffer = ByteBuffer.allocate(capacity);
-        buffer.put((byte) (input ? 1 : 0));
+        buffer.put(();
         buffer.put(txId.getBytes());
         buffer.put(blockId.getBytes());
         buffer.put(addressBytes);
