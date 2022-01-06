@@ -48,7 +48,7 @@
 		<commons-lang3.version>3.11</commons-lang3.version>
 		<lombok.version>1.18.16</lombok.version>
 
-		<bitcoinj-core.version>0.16</bitcoinj-core.version>
+		<bitcoinj-core.version>0.16.1</bitcoinj-core.version>
         <leveldbjni.version>1.8</leveldbjni.version>
 
 		<swagger-annotations.version>1.6.2</swagger-annotations.version>

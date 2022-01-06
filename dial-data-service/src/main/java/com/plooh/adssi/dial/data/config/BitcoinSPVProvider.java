@@ -36,12 +36,13 @@ public class BitcoinSPVProvider {
         BlockChain chain = new BlockChain(params, blockStore);
         PeerGroup peerGroup = new PeerGroup(params, chain);
 
-        if (StringUtils.isNotBlank(bitcoinProperties.getFastCatchupTime())){
+        if (StringUtils.isNotBlank(bitcoinProperties.getFastCatchupTime())) {
             try {
                 Instant instant = Instant.parse(bitcoinProperties.getFastCatchupTime());
                 peerGroup.setFastCatchupTimeSecs(instant.toEpochMilli() / 1000);
-            } catch (Exception e){
-                log.warn(String.format("FastCatchupTime property [%s] not properly configured. Please check...", bitcoinProperties.getFastCatchupTime()), e);
+            } catch (Exception e) {
+                log.warn(String.format("FastCatchupTime property [%s] not properly configured. Please check...",
+                        bitcoinProperties.getFastCatchupTime()), e);
             }
         }
 
@@ -51,8 +52,11 @@ public class BitcoinSPVProvider {
             peerGroup.addPeerDiscovery(new DnsDiscovery(params));
         }
 
+        // Mempool Transactions
         peerGroup.addOnTransactionBroadcastListener(Threading.USER_THREAD, (peer, transaction) -> {
-            btcBlockStore.storeTransaction(transaction);
+            log.debug(String.format("Processing mempool transaction... [%s]", transaction.getTxId().toString()));
+
+            btcBlockStore.storeTransaction(transaction, true);
         });
 
         peerGroup.addBlocksDownloadedEventListener(Threading.USER_THREAD, (peer, block, filteredBlock, blocksLeft) -> {
