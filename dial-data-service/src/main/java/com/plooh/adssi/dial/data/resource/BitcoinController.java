@@ -1,20 +1,18 @@
 package com.plooh.adssi.dial.data.resource;
 
+import com.plooh.adssi.dial.data.exception.*;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import java.util.Optional;
 import javax.validation.Valid;
 
 import com.plooh.adssi.dial.data.bitcoin.BitcoinApi;
-import com.plooh.adssi.dial.data.exception.AddressNotFound;
-import com.plooh.adssi.dial.data.exception.BlockNotFound;
-import com.plooh.adssi.dial.data.exception.NotChainHead;
-import com.plooh.adssi.dial.data.exception.PayloadLarge;
-import com.plooh.adssi.dial.data.exception.TransactionNotFound;
 import com.plooh.adssi.dial.data.repository.BtcBlockStore;
 import com.plooh.adssi.dial.data.service.PeerGroupService;
 
 import org.bitcoinj.core.Address;
+import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Utils;
 import org.springframework.core.io.ByteArrayResource;
 import org.springframework.core.io.Resource;
@@ -118,8 +116,14 @@ public class BitcoinController implements BitcoinApi {
     @Override
     public ResponseEntity<Resource> getTxsForAddress(String address) {
 
-        var response = btcBlockStore
-                .getTxsForAddress(Address.fromString(btcBlockStore.getParams(), address))
+        Address btcAddress;
+        try{
+            btcAddress = Address.fromString(btcBlockStore.getParams(), address);
+        } catch (AddressFormatException e){
+            throw new AddressFormatNotAllowed(e.getMessage());
+        }
+
+        var response = btcBlockStore.getTxsForAddress(btcAddress)
                 .orElseThrow(() -> new AddressNotFound(address));
         return res(response, address + ".txIds.dat");
     }

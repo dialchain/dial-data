@@ -5,18 +5,18 @@ import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 
 @AllArgsConstructor
-public class AddressNotFound extends DialDataException {
+public class AddressFormatNotAllowed extends DialDataException {
 
-    private final String address;
+    private final String message;
 
     @Override
     public String getMessage() {
-        return MessageFormat.format("No transaction found for address {0}.", address);
+        return MessageFormat.format("Address format not allowed: {0}.", message);
     }
 
     @Override
     public HttpStatus status() {
-        return HttpStatus.NOT_FOUND;
+        return HttpStatus.BAD_REQUEST;
     }
 
 }
